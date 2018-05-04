@@ -1,0 +1,5 @@
+// the configured options and settings for Tutorial
+#define libjson_VERSION_MAJOR @libjson_VERSION_MAJOR@
+#define libjson_VERSION_MINOR @libjson_VERSION_MINOR@
+
+

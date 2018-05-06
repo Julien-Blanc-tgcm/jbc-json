@@ -9,21 +9,21 @@ using namespace json;
 
 struct FakeItemBuilder {
     // ARRAY
-    static bool begin_array_handler_begin() { return true; }
+    static bool begin_array_handler() { return true; }
     static bool begin_array_handler_array() { return true; }
     static bool begin_array_handler_object_value() { return true; }
 
     static bool end_array_handler() { return true; }
 
     // OBJECT
-    static bool begin_object_handler_begin() { return true; }
+    static bool begin_object_handler() { return true; }
     static bool begin_object_handler_array() { return true; }
     static bool begin_object_handler_object_value() { return true; }
 
     static bool end_object_handler() { return true; }
 
     // BOOLEAN
-    static bool boolean_handler_array(bool /*value*/) { return true; }
+    static bool boolean_handler(bool /*value*/) { return true; }
     static bool boolean_handler_object_value(bool /*value*/) { return true; }
 
     // DOUBLE
@@ -33,13 +33,13 @@ struct FakeItemBuilder {
     static bool integer_handler_array(int64_t /*value*/) { return true; }
     static bool integer_handler_object_value(int64_t /*value*/) { return true; }
 
-    static bool null_handler_array() { return true; }
+    static bool null_handler() { return true; }
     static bool null_handler_object_value() { return true; }
 
     // STRING
-    static bool string_handler_array(std::vector<char> const& /*value*/) { return true; }
+    static bool string_handler(std::vector<char> const& /*value*/) { return true; }
     static bool string_handler_object_value(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_object_key(std::vector<char> const& /*value*/) { return true; }
+    static bool key_handler(std::vector<char> const& /*value*/) { return true; }
     static bool string_handler_initial(std::vector<char> const&) { return true;}
 
 };

@@ -16,24 +16,26 @@ protected:
   //  Parser<typename Item_::traits::string_type, typename Item_::traits::char_type>& parser_;
     Item_ item_;
     container<Item_*> current_item_;
+    enum class State : std::uint8_t {
+        Initial,
+        InArray,
+        InObject
+    };
+
+    State state_ = State::Initial;
 
     // ARRAY
-    bool begin_array_handler_begin();
-    bool begin_array_handler_array();
-    bool begin_array_handler_object_value();
+    bool begin_array_handler();
 
     bool end_array_handler();
 
     // OBJECT
-    bool begin_object_handler_begin();
-    bool begin_object_handler_array();
-    bool begin_object_handler_object_value();
+    bool begin_object_handler();
 
     bool end_object_handler();
 
     // BOOLEAN
-    bool boolean_handler_array(bool value);
-    bool boolean_handler_object_value(bool value);
+    bool boolean_handler(bool value);
 
     // DOUBLE
     bool double_handler_array(double value);
@@ -41,18 +43,15 @@ protected:
 
 #ifdef JSON_USE_LONG_INTEGERS
     // INTEGER
-    bool integer_handler_array(int64_t value);
-    bool integer_handler_object_value(int64_t value);
+    bool integer_handler(int64_t value);
+    bool integer_handler(int64_t value);
 #endif
     // NULL
-    bool null_handler_array();
-    bool null_handler_object_value();
+    bool null_handler();
 
     // STRING
-    bool string_handler_array(typename Item_::traits::buffer_type const& value);
-    bool string_handler_object_value(typename Item_::traits::buffer_type const& value);
-    bool string_handler_object_key(typename Item_::traits::buffer_type const& value);
-    bool string_handler_initial(typename Item_::traits::buffer_type const& value);
+    bool string_handler(typename Item_::traits::buffer_type const& value);
+    bool key_handler(typename Item_::traits::buffer_type const& value);
 
 public:
     item_builder();
@@ -76,29 +75,29 @@ public:
 template<template<class> class container,typename Item_>
 item_builder<container, Item_>::item_builder()
 {
-
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_array_handler_begin()
-{
-    item_.morph_to(ItemType::Array);
     current_item_.push_back(&item_);
-    return true;
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_array_handler_array()
+bool item_builder<container, Item_>::begin_array_handler()
 {
-    current_item_.push_back(current_item_.back()->create_item(ItemType::Array));
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_array_handler_object_value()
-{
-    current_item_.back()->morph_to(ItemType::Array);
-    return true;
+    if(item_.type() == ItemType::Null)
+    {
+        item_.morph_to(ItemType::Array);
+        current_item_.push_back(&item_);
+        return true;
+    }
+    else if(current_item_.back()->type() == ItemType::Array)
+    {
+        current_item_.push_back(current_item_.back()->create_item(ItemType::Array));
+        return true;
+    }
+    else
+    { // ItemType::Object: // object value
+        current_item_.back()->morph_to(ItemType::Array);
+        return true;
+    }
+    return false;
 }
 
 template<template<class> class container,typename Item_>
@@ -110,25 +109,24 @@ bool item_builder<container, Item_>::end_array_handler()
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_object_handler_begin()
+bool item_builder<container, Item_>::begin_object_handler()
 {
-    item_.morph_to(ItemType::Object);
-    current_item_.push_back(&item_);
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_object_handler_array()
-{
-    current_item_.push_back(current_item_.back()->add_item(Item_(ItemType::Object)));
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::begin_object_handler_object_value()
-{
-    current_item_.back()->morph_to(ItemType::Object);
-    return true;
+    if(item_.type() == ItemType::Null)
+    {
+        item_.morph_to(ItemType::Object);
+        current_item_.push_back(&item_);
+        return true;
+    }
+    else if(current_item_.back()->type() == ItemType::Array)
+    {
+        current_item_.push_back(current_item_.back()->add_item(Item_(ItemType::Object)));
+        return true;
+    }
+    else
+    { // ItemType::Object: // object value
+        current_item_.back()->morph_to(ItemType::Object);
+        return true;
+    }
 }
 
 template<template<class> class container,typename Item_>
@@ -140,20 +138,22 @@ bool item_builder<container, Item_>::end_object_handler()
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::boolean_handler_array(bool value)
+bool item_builder<container, Item_>::boolean_handler(bool value)
 {
-    Item_* item = current_item_.back()->create_item(ItemType::Boolean);
-    item->set_bool_value(value);
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::boolean_handler_object_value(bool value)
-{
-    current_item_.back()->morph_to(ItemType::Boolean);
-    current_item_.back()->set_bool_value(value);
-    current_item_.pop_back();
-    return true;
+    if(current_item_.back()->type() == ItemType::Array)
+    {
+        Item_* item = current_item_.back()->create_item(ItemType::Boolean);
+        item->set_bool_value(value);
+        return true;
+    }
+    else
+    { // ItemType::Object:
+        current_item_.back()->morph_to(ItemType::Boolean);
+        current_item_.back()->set_bool_value(value);
+        current_item_.pop_back();
+        return true;
+    }
+    return false;
 }
 
 template<template<class> class container,typename Item_>
@@ -193,56 +193,56 @@ bool item_builder<container, Item_>::integer_handler_object_value(int64_t value)
 #endif
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::null_handler_array()
+bool item_builder<container, Item_>::null_handler()
 {
-    current_item_.back()->create_item(ItemType::Null);
-    return true;
+    if(current_item_.back()->type() == ItemType::Array)
+    {
+        current_item_.back()->create_item(ItemType::Null);
+        return true;
+    }
+    else // ItemType::Object:
+    {
+        current_item_.pop_back();
+        return true;
+    }
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::null_handler_object_value()
+bool item_builder<container, Item_>::string_handler(typename Item_::traits::buffer_type const& value)
 {
-    current_item_.pop_back();
-    return true;
+    if(item_.type() == ItemType::Null)
+    {
+        typedef typename Item_::traits::string_type string;
+        string s{value.begin(), value.end()};
+        item_.morph_to_string(std::move(s));
+        current_item_.push_back(&item_);
+        return true;
+    }
+    else if(current_item_.back()->type() == ItemType::Array)
+    {
+        Item_* item = current_item_.back()->create_item(ItemType::String);
+        typedef typename Item_::traits::string_type string;
+        string s{value.begin(), value.end()};
+        item->set_string_value(std::move(s));
+        return true;
+    }
+    else
+    { // ItemType::Object:
+        typedef typename Item_::traits::string_type string;
+        string s{value.begin(), value.end()};
+        current_item_.back()->morph_to_string(std::move(s));
+        current_item_.pop_back();
+        return true;
+    }
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::string_handler_array(typename Item_::traits::buffer_type const& value)
-{
-    Item_* item = current_item_.back()->create_item(ItemType::String);
-    typedef typename Item_::traits::string_type string;
-    string s{value.begin(), value.end()};
-    item->set_string_value(std::move(s));
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::string_handler_object_value(typename Item_::traits::buffer_type const& value)
-{
-    typedef typename Item_::traits::string_type string;
-    string s{value.begin(), value.end()};
-    current_item_.back()->morph_to_string(std::move(s));
-    current_item_.pop_back();
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::string_handler_object_key(typename Item_::traits::buffer_type const& value)
+bool item_builder<container, Item_>::key_handler(typename Item_::traits::buffer_type const& value)
 {
     typedef typename Item_::traits::string_type string;
     string s{value.begin(), value.end()};
     Item_* item = current_item_.back()->create_property(std::move(s));
     current_item_.push_back(item);
-    return true;
-}
-
-template<template<class> class container, typename Item_>
-bool item_builder<container, Item_>::string_handler_initial(typename Item_::traits::buffer_type const& value)
-{
-    typedef typename Item_::traits::string_type string;
-    string s{value.begin(), value.end()};
-    item_.morph_to_string(std::move(s));
-    current_item_.push_back(&item_);
     return true;
 }
 

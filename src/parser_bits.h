@@ -145,7 +145,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
             return false;
         begin_ = false;
         push_consumer_(&parser_bits::consume_objectstart_);
-        return parser_callbacks::begin_object_handler_begin() ||
+        return parser_callbacks::begin_object_handler() ||
             make_error("begin_object_handler_begin failed");
     }
     if(token_helper<char_type_>::is_token_opening_square_bracket(char_))
@@ -154,7 +154,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
             return false;
         begin_ = false;
         push_consumer_(&parser_bits::consume_arraystart_);
-        return parser_callbacks::begin_array_handler_begin() ||
+        return parser_callbacks::begin_array_handler() ||
             make_error("begin_array_handler_begin failed");
     }
     if(token_helper<char_type_>::is_token_double_quote(char_))
@@ -183,13 +183,13 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_opening_curly_bracket(char_))
     {
         push_consumer_(&parser_bits::consume_objectstart_);
-        return parser_callbacks::begin_object_handler_array() ||
+        return parser_callbacks::begin_object_handler() ||
                 make_error("begin_object_handler_array Failed");
     }
     if(token_helper<char_type_>::is_token_opening_square_bracket(char_))
     {
         push_consumer_(&parser_bits::consume_arraystart_);
-        return parser_callbacks::begin_array_handler_array() ||
+        return parser_callbacks::begin_array_handler() ||
             make_error("begin_array_handler_array Failed");
         return true;
     }
@@ -284,14 +284,14 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_opening_curly_bracket(char_))
     {
         push_consumer_(&parser_bits::consume_objectstart_);
-        return parser_callbacks::begin_object_handler_object_value() ||
+        return parser_callbacks::begin_object_handler() ||
             make_error("begin_object_handler_object_value failed");
         return true;
     }
     if(token_helper<char_type_>::is_token_opening_square_bracket(char_))
     {
         push_consumer_(&parser_bits::consume_arraystart_);
-        return parser_callbacks::begin_array_handler_object_value() ||
+        return parser_callbacks::begin_array_handler() ||
             make_error("begin_array_handler_object_value failed");
         return true;
     }
@@ -468,12 +468,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_char_e(char_))
     {
         pop_state();
-        if(consumer_stack_.back() == &parser_bits::consume_array_)
-            return parser_callbacks::boolean_handler_array(false) ||
-                    make_error("boolean_handler_array failed");
-        else if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-            return parser_callbacks::boolean_handler_object_value(false) ||
-                    make_error("boolean_handler_object_value failed");
+        return parser_callbacks::boolean_handler(false) || make_error("boolean_handler failed");
     }
     return make_error("Unexpected token in False_S");
 }
@@ -509,10 +504,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_char_e(char_))
     {
         pop_state();
-        if(consumer_stack_.back() == &parser_bits::consume_array_)
-            return parser_callbacks::boolean_handler_array(true) || make_error("boolean_handler_array failed");
-        else if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-            return parser_callbacks::boolean_handler_object_value(true) || make_error("boolean_handler_object_value failed");
+        return parser_callbacks::boolean_handler(true) || make_error("boolean_handler_array failed");
     }
     return make_error("Unexpected token in True_U");
 }
@@ -548,10 +540,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_char_l(char_))
     {
         pop_state();
-        if(consumer_stack_.back() == &parser_bits::consume_array_)
-            return parser_callbacks::null_handler_array() || make_error("null_handler_array failed");
-        else if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-            return parser_callbacks::null_handler_object_value() || make_error("null_handler_object_value failed");
+        return parser_callbacks::null_handler() || make_error("null_handler failed");
     }
     return make_error("Unexpected token in Null_L");
 }
@@ -568,7 +557,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     {
         pop_state();
         bool res = false;
-        res = parser_callbacks::string_handler_object_key(lastValue);
+        res = parser_callbacks::key_handler(lastValue);
         return res || make_error("string handling failure");
     }
     else if(token_helper<char_type_>::is_token_forbidden_in_string(char_))
@@ -590,12 +579,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     {
         pop_state();
         bool res = false;
-        if(consumer_stack_.back() == &parser_bits::consume_array_)
-            res = parser_callbacks::string_handler_array(lastValue);
-        else if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-            res = parser_callbacks::string_handler_object_value(lastValue);
-        else if(consumer_stack_.back() == &parser_bits::consume_initial_)
-            res = parser_callbacks::string_handler_initial(lastValue);
+        res = parser_callbacks::string_handler(lastValue);
         helper_functions<buffer_type, char_type>::truncate(lastValue);
         return res || make_error("string handling failure");
     }

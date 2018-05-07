@@ -24,23 +24,17 @@ struct FakeItemBuilder {
 
     // BOOLEAN
     static bool boolean_handler(bool /*value*/) { return true; }
-    static bool boolean_handler_object_value(bool /*value*/) { return true; }
 
     // DOUBLE
-    static bool double_handler_array(double /*value*/) { return true; }
-    static bool double_handler_object_value(double /*value*/) { return true; }
+    static bool double_handler(double /*value*/) { return true; }
 
-    static bool integer_handler_array(int64_t /*value*/) { return true; }
-    static bool integer_handler_object_value(int64_t /*value*/) { return true; }
+    static bool integer_handler(int64_t /*value*/) { return true; }
 
     static bool null_handler() { return true; }
-    static bool null_handler_object_value() { return true; }
 
     // STRING
     static bool string_handler(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_object_value(std::vector<char> const& /*value*/) { return true; }
     static bool key_handler(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_initial(std::vector<char> const&) { return true;}
 
 };
 //	template<typename T> using stdvector=std::vector<T>;

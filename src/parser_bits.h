@@ -836,10 +836,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         std::pair<bool, double> val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
         if(val.first)
         {
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::double_handler_array(val.second) && consume(char_); // reconsume char, but outside number !
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::double_handler_object_value(val.second) && consume(char_); // reconsume char, but outside number !
+            return parser_callbacks::double_handler(val.second) && consume(char_); // reconsume char, but outside number !
         }
         return make_error("Invalid double value");
 #ifdef JSON_USE_LONG_INTEGERS
@@ -849,18 +846,12 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         std::pair<bool, int64_t> val = helper_functions<buffer_type_, char_type_>::string_to_integer(lastValue);
         if(val.first)
         {
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::integer_handler_array(val.second) && consume(char_);
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::integer_handler_object_value(val.second) && consume(char_);
+            return parser_callbacks::integer_handler(val.second) && consume(char_);
         }
         else // may be an overflow : try to read as double
         {
             auto val2 = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::double_handler_array(val2.second) && consume(char_); // reconsume char, but outside number !
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::double_handler_object_value(val2.second) && consume(char_); // reconsume char, but outside number !
+            return parser_callbacks::double_handler(val2.second) && consume(char_); // reconsume char, but outside number !
         }
         return make_error("Invalid integer");
     }
@@ -894,10 +885,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         std::pair<bool, double> val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
         if(val.first)
         {
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::double_handler_array(val.second) && consume(char_); // reconsume char, but outside number !
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::double_handler_object_value(val.second) && consume(char_); // reconsume char, but outside number !
+            return parser_callbacks::double_handler(val.second) && consume(char_); // reconsume char, but outside number !
         }
         return make_error("Invalid double value");
 #ifdef JSON_USE_LONG_INTEGERS
@@ -907,18 +895,12 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         std::pair<bool, int64_t> val = helper_functions<buffer_type_, char_type_>::string_to_integer(lastValue);
         if(val.first)
         {
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::integer_handler_array(val.second) && consume(char_);
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::integer_handler_object_value(val.second) && consume(char_);
+            return parser_callbacks::integer_handler(val.second) && consume(char_);
         }
         else // may be an overflow : try to read as double
         {
             auto val2 = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
-            if(consumer_stack_.back() == &parser_bits::consume_array_)
-                return parser_callbacks::double_handler_array(val2.second) && consume(char_); // reconsume char, but outside number !
-            if(consumer_stack_.back() == &parser_bits::consume_objectvalue_)
-                return parser_callbacks::double_handler_object_value(val2.second) && consume(char_); // reconsume char, but outside number !
+            return parser_callbacks::double_handler(val2.second) && consume(char_); // reconsume char, but outside number !
         }
         return make_error("Invalid integer");
     }

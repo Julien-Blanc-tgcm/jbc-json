@@ -7,85 +7,149 @@ using namespace jbc;
 using namespace json;
 
 struct ItemBuilderPrinter {
-    static std::array<char, 65536> buf;
+    std::array<char, 65536> buf;
     using o=output<char>;
-    static int offset;
-    static locator l;
+    int offset = 0;
+    bool previous_is_key = true;
 
-    bool array_start = false;
-
-    static void flushbuffer()
+    void flushbuffer()
     {
         std::cout.write(buf.data(), offset);
         offset = 0;
     }
 
     // ARRAY
-    static bool begin_array_handler_begin() {
-        if(o::array_start(buf, offset))
-            return true;
-        else
+    bool begin_array_handler() {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        previous_is_key = true;
+        while(!o::array_start(buf, offset))
         {
             flushbuffer();
-            return begin_array_handler_begin();
         }
+        return true;
     }
-    static bool begin_array_handler_array() { return begin_array_handler_begin(); }
-    static bool begin_array_handler_object_value() { return begin_array_handler_begin(); }
 
-    static bool end_array_handler() {
-        if(o::array_end(buf, offset))
-            return true;
-        else
+    bool end_array_handler() {
+        previous_is_key = false;
+        while(!o::array_end(buf, offset))
         {
             flushbuffer();
-            return begin_array_handler_begin();
         }
+        return true;
     }
 
     // OBJECT
-    static bool begin_object_handler_begin() {
-        if(o::object_start(buf, offset))
-            return true;
-        else
+    bool begin_object_handler() {
+        if(!previous_is_key)
         {
-            flushbuffer();
-            return begin_object_handler_begin();
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
         }
+        previous_is_key = true;
+        while(!o::object_start(buf, offset))
+            flushbuffer();
+        return true;
     }
 
-    static bool begin_object_handler_array() { return begin_object_handler_begin(); }
-    static bool begin_object_handler_object_value() { return begin_object_handler_begin(); }
-
-    static bool end_object_handler() {
-        if(o::object_end(buf, offset))
-            return true;
-        else
+    bool end_object_handler() {
+        previous_is_key = false;
+        while(!o::object_end(buf, offset))
         {
             flushbuffer();
-            return begin_object_handler_begin();
         }
+        return true;
     }
 
     // BOOLEAN
-    static bool boolean_handler_array(bool /*value*/) { return true; }
-    static bool boolean_handler_object_value(bool /*value*/) { return true; }
+    bool boolean_handler(bool value)
+    {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        locator loc;
+        while(!o::boolean(value, loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        previous_is_key = false;
+        return true;
+    }
 
     // DOUBLE
-    static bool double_handler_array(double /*value*/) { return true; }
-    static bool double_handler_object_value(double /*value*/) { return true; }
+    bool double_handler(double value)
+    {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        locator loc;
+        while(!o::number(value, 10, loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        previous_is_key = false;
+        return true;
+    }
 
-    static bool integer_handler_array(int64_t /*value*/) { return true; }
-    static bool integer_handler_object_value(int64_t /*value*/) { return true; }
+    bool integer_handler(int64_t /*value*/) { return true; }
 
-    static bool null_handler_array() { return true; }
-    static bool null_handler_object_value() { return true; }
+    bool null_handler()
+    {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        locator loc;
+        while(!o::null(loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        previous_is_key = false;
+        return true;
+    }
 
     // STRING
-    static bool string_handler_array(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_object_value(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_object_key(std::vector<char> const& /*value*/) { return true; }
-    static bool string_handler_initial(std::vector<char> const& value) {
+    bool string_handler(std::vector<char> const& value)
+    {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        locator loc;
+        while(!o::string(value, loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        previous_is_key = false;
+        return true;
+    }
+
+    bool key_handler(std::vector<char> const& value)
+    {
+        if(!previous_is_key)
+        {
+            while(!o::array_separator(buf, offset))
+                flushbuffer();
+        }
+        locator loc;
+        previous_is_key = true;
+        while(!o::string(value, loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        while(!o::object_keyvalueseparator(buf, offset))
+        {
+            flushbuffer();
+        }
         return true;
     }
 
@@ -127,8 +191,30 @@ int main(int argc, char** argv)
     }
     else if(use_traversal)
     {
-        // todo : implement
-        res = false;
+        std::cerr << "Parsing using traversal printing\n";
+        parser_bits<stdvector, ItemBuilderPrinter, std::vector<char>, char> parser;
+        constexpr const int buffersize = 65536;
+        char buf[buffersize];
+        bool good = true;
+        FILE *file;
+        file = fopen(f.c_str(), "rb");
+        if(!file)
+            return false;
+        while(good && !feof(file))
+        {
+            size_t ret = fread(buf, sizeof(char), buffersize, file);
+            good = parser.consume(buf, buf + ret);
+        }
+        if(feof(file) && good)
+        {
+            if(parser.end())
+            {
+                parser.flushbuffer();
+                return 0;
+            }
+        }
+        else
+            res = false;
     }
     else
     {

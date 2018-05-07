@@ -38,12 +38,10 @@ protected:
     bool boolean_handler(bool value);
 
     // DOUBLE
-    bool double_handler_array(double value);
-    bool double_handler_object_value(double value);
+    bool double_handler(double value);
 
 #ifdef JSON_USE_LONG_INTEGERS
     // INTEGER
-    bool integer_handler(int64_t value);
     bool integer_handler(int64_t value);
 #endif
     // NULL
@@ -157,39 +155,42 @@ bool item_builder<container, Item_>::boolean_handler(bool value)
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::double_handler_array(double value)
+bool item_builder<container, Item_>::double_handler(double value)
 {
-    Item_* item = current_item_.back()->create_item(ItemType::Double);
-    item->set_double_value(value);
-    return true;
-}
-
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::double_handler_object_value(double value)
-{
-    current_item_.back()->morph_to(ItemType::Double);
-    current_item_.back()->set_double_value(value);
-    current_item_.pop_back();
-    return true;
+    if(current_item_.back()->type() == ItemType::Array)
+    {
+        Item_* item = current_item_.back()->create_item(ItemType::Double);
+        item->set_double_value(value);
+        return true;
+    }
+    else
+    {
+        current_item_.back()->morph_to(ItemType::Double);
+        current_item_.back()->set_double_value(value);
+        current_item_.pop_back();
+        return true;
+    }
 }
 
 #ifdef JSON_USE_LONG_INTEGERS
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::integer_handler_array(int64_t value)
+bool item_builder<container, Item_>::integer_handler(int64_t value)
 {
-    Item_* item = current_item_.back()->create_item(ItemType::Integer);
-    item->setIntegerValue(value);
-    return true;
+    if(current_item_.back()->type() == ItemType::Array)
+    {
+        Item_* item = current_item_.back()->create_item(ItemType::Integer);
+        item->setIntegerValue(value);
+        return true;
+    }
+    else
+    {
+        current_item_.back()->morph_to(ItemType::Integer);
+        current_item_.back()->setIntegerValue(value);
+        current_item_.pop_back();
+        return true;
+    }
 }
 
-template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::integer_handler_object_value(int64_t value)
-{
-    current_item_.back()->morph_to(ItemType::Integer);
-    current_item_.back()->setIntegerValue(value);
-    current_item_.pop_back();
-    return true;
-}
 #endif
 
 template<template<class> class container,typename Item_>

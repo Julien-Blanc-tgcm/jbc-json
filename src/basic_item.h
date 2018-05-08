@@ -57,7 +57,6 @@ class basic_item
     > data_type;
 
     data_type data_;
-//    ItemType itemType_ = ItemType::Null;
     bool complete_ = true;
 
 public:
@@ -93,7 +92,7 @@ public:
      */
     basic_item(basic_item &&other) noexcept;
     /**
-     * @brief operator = move operator= is deleted. Should not be needed.
+     * @brief operator = move operator.
      * @param other
      * @return current object
      */
@@ -347,8 +346,6 @@ basic_item<traits>::basic_item(bool async) noexcept :
     data_{boost::blank{}},
     complete_{!async}
 {
-/*    for(size_t i = 0; i < sizeof(dataptr_); ++i)
-        dataptr_[i] = 0; */
 }
 
 template<typename traits>

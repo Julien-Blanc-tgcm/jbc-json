@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(numberoutput, *utf::description("Output a single number"))
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 7);
     BOOST_TEST(res);
-    BOOST_TEST(memcmp(buf.data(), "3.38778", 8) == 0);
+    BOOST_TEST(memcmp(buf.data(), "3.38778", 7) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(numberoutput2, *utf::description("Output a single number at specific position"))
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(numberoutput2, *utf::description("Output a single number at
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 17);
     BOOST_TEST(res);
-    BOOST_TEST(memcmp(buf.data() + 10, "3.38778", 8) == 0);
+    BOOST_TEST(memcmp(buf.data() + 10, "3.38778", 7) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(numberoutput3, *utf::description("Output a number that does not fit"))
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(numberoutput4, *utf::description("Output second part of a n
     BOOST_TEST(offset == 4);
     BOOST_TEST(loc.position == 0); // written, so reset
     BOOST_TEST(res);
-    BOOST_TEST(memcmp(buf.data() + 1, "778", 4) == 0);
+    BOOST_TEST(memcmp(buf.data() + 1, "778", 3) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(booleanoutput, *utf::description("Output a single boolean (true)"))

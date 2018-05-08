@@ -1,6 +1,10 @@
+//          Copyright Julien Blanc 2018.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          https://www.boost.org/LICENSE_1_0.txt)
+
 #ifndef JBC_JSON_PARSER_BITS_H
 #define JBC_JSON_PARSER_BITS_H
-
 
 #include <stdint.h>
 #include <functional>

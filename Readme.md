@@ -14,6 +14,8 @@ memory usage in mind.
 
 # Concepts
 
+## Parser / item / producer separation
+
 The library mainly consist of three independant parts, which are combined 
 together to produce a fully featured JSON parser / producer :
 
@@ -38,5 +40,20 @@ There are also some glue parts :
  * there is also, in program json_print, a sample item_builder_printer class
    which makes a direct link between parser and output.
 
+## String and container agnosticity
 
+The library tries not to enforce the use of a particular container or string
+type. Such types are part of a traits class. The file stl_json.h serves as
+both a standard implementation which should be sufficient for most people
+and an example on how to implement its own traits to integrate the parser
+with custom string or container types.
 
+Another sample is the zero-allocating traits, which do not do a single
+dynamic allocation. Note that this is incompatible with the use of basic_item,
+which requires dynamic allocation (only parsing / outputting is supported with
+these traits). These may be ideal in an embedded context, where json would be
+used as an input / output format but not for internal data representation.
+
+If needed, helper_functions can be customized. While they were designed to
+work with most string and character types, there can be some corner cases
+where customization is needed.

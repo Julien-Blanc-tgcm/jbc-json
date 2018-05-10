@@ -219,7 +219,7 @@ bool item_builder<container, Item_>::string_handler(typename Item_::traits::buff
     if(item_.type() == ItemType::Null)
     {
         typedef typename Item_::traits::string_type string;
-        string s{value.begin(), value.end()};
+        string s = Item_::traits::make_string(value.begin(), value.end());
         item_.morph_to_string(std::move(s));
         current_item_.push_back(&item_);
         return true;
@@ -228,14 +228,14 @@ bool item_builder<container, Item_>::string_handler(typename Item_::traits::buff
     {
         Item_* item = current_item_.back()->create_item(ItemType::String);
         typedef typename Item_::traits::string_type string;
-        string s{value.begin(), value.end()};
+        string s = Item_::traits::make_string(value.begin(), value.end());
         item->set_string_value(std::move(s));
         return true;
     }
     else
     { // ItemType::Object:
         typedef typename Item_::traits::string_type string;
-        string s{value.begin(), value.end()};
+        string s = Item_::traits::make_string(value.begin(), value.end());
         current_item_.back()->morph_to_string(std::move(s));
         current_item_.pop_back();
         return true;
@@ -246,7 +246,7 @@ template<template<class> class container,typename Item_>
 bool item_builder<container, Item_>::key_handler(typename Item_::traits::buffer_type const& value)
 {
     typedef typename Item_::traits::string_type string;
-    string s{value.begin(), value.end()};
+    string s = Item_::traits::make_string(value.begin(), value.end());
     Item_* item = current_item_.back()->create_property(std::move(s));
     current_item_.push_back(item);
     return true;

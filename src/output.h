@@ -413,7 +413,7 @@ template<typename char_type>
 template<typename string_type, typename buffer>
 std::pair<int,int> output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locator& loc)
 {
-    char c = value[loc.position - 1];
+    char_type c = value[loc.position - 1];
     int advance = 0;
     std::string str;
     str.reserve(20);// max size is 20;

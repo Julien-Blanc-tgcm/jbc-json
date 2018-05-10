@@ -837,7 +837,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(lastNumIsFloat)
     {
 #endif
-        std::pair<bool, double> val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
+        auto val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
         if(val.first)
         {
             return parser_callbacks::double_handler(val.second) && consume(char_); // reconsume char, but outside number !
@@ -886,7 +886,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(lastNumIsFloat)
     {
 #endif
-        std::pair<bool, double> val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
+        auto val = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
         if(val.first)
         {
             return parser_callbacks::double_handler(val.second) && consume(char_); // reconsume char, but outside number !
@@ -896,7 +896,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     }
     else
     {
-        std::pair<bool, int64_t> val = helper_functions<buffer_type_, char_type_>::string_to_integer(lastValue);
+        auto val = helper_functions<buffer_type_, char_type_>::string_to_integer(lastValue);
         if(val.first)
         {
             return parser_callbacks::integer_handler(val.second) && consume(char_);

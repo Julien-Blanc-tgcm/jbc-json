@@ -7,6 +7,7 @@
 #include <libjson.h>
 #include <stl_json.h>
 #include <fstream>
+#include <static_json.h>
 
 using namespace jbc;
 using namespace json;
@@ -197,7 +198,7 @@ int main(int argc, char** argv)
     else if(use_traversal)
     {
         std::cerr << "Parsing using traversal printing\n";
-        parser_bits<stdvector, ItemBuilderPrinter, std::vector<char>, char> parser;
+        parser_bits<static_vector, ItemBuilderPrinter, std::vector<char>, char> parser;
         constexpr const int buffersize = 65536;
         char buf[buffersize];
         bool good = true;

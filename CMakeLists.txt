@@ -31,6 +31,8 @@ SET(LIB_HEADERS
     src/utf8_printer.h
     src/output.h
     src/output_utilities.h
+    src/static_json.h
+    src/qt_json.h
     DBC/contracts.h
 )
 include_directories(src)
@@ -39,12 +41,20 @@ add_executable(jsonprint tools/jsonprint/jsonprint.cpp ${LIB_HEADERS})
 add_executable(jsonlint tools/jsonlint/jsonlint.cpp ${LIB_HEADERS})
 
 add_executable(json_conformance_test tests/json_conformance/json_conformance.cpp ${LIB_HEADERS})
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+find_package(Qt5Core)
+add_executable(json_conformance_qt_test tests/json_conformance/json_conformance_qt.cpp ${LIB_HEADERS})
 add_executable(json_output_test tests/json_output/json_output.cpp ${LIB_HEADERS})
+#add_executable(json_output_qt_test tests/json_output/json_output_qt.cpp ${LIB_HEADERS})
 
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 target_link_libraries(json_conformance_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+target_link_libraries(json_conformance_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
 target_link_libraries(json_output_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+#target_link_libraries(json_output_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
 
 add_test(NAME json_conformance COMMAND test_json_conformance)
 

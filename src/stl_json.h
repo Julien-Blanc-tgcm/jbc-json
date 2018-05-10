@@ -41,6 +41,10 @@ struct stl_types
     {
         return std::string(str);
     }
+    static std::string make_string(buffer_type::const_iterator begin, buffer_type::const_iterator end)
+    {
+        return std::string(begin, end);
+    }
     static int char_value(char c)
     {
         return static_cast<int>(static_cast<unsigned char>(c));

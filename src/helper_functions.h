@@ -344,7 +344,7 @@ void helper_functions<buffer_type_, char_type_>::append_code_point(buffer_type_ 
             }
             else if(code_point <= 0x200000) // 4 bytes
             {
-		uint8_t bytes[5];
+                uint8_t bytes[5];
                 bytes[0] = 0xF0;
                 bytes[1] = 0x80;
                 bytes[2] = 0x80;

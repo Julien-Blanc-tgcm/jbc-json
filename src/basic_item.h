@@ -76,13 +76,16 @@ public:
      * @brief basic_item copy constructor.
      * @param other basic_item to copy
      */
-    basic_item(basic_item const& other) noexcept;
+    basic_item(basic_item const& other)=default;
     /**
      * @brief operator = copy operator.
      * @param other basic_item to copy
      * @return current object
      */
-    basic_item& operator=(basic_item const& other) noexcept;
+    basic_item& operator=(basic_item const& other)=default;
+#else
+    basic_item(basic_item const &other)=delete;
+    basic_item& operator=(basic_item const& other)=delete;
 #endif
     static basic_item clone(basic_item const& other) noexcept;
 public:
@@ -559,7 +562,7 @@ void basic_item<traits>::morph_to(ItemType newType)
             break;
         case ItemType::String:
         {
-            data_ = std::string{};
+            data_ = typename traits::string_type{};
             break;
         }
         case ItemType::Object:
@@ -734,7 +737,7 @@ basic_item<traits>* basic_item<traits>::create_item(ItemType type)
 {
     REQUIRE(this->type() == ItemType::Array, "Must be an array");
     typename traits::array_type& arr = boost::get<typename traits::array_type>(data_);
-    arr.emplace_back(type);
+    traits::array_emplace_back(arr, type);
     return &arr.back();
 }
 

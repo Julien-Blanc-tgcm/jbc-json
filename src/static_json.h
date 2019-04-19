@@ -28,8 +28,8 @@ using static_vector=boost::container::static_vector<T, JSON_MAX_DEPTH>;
 struct static_types
 {
 //    typedef std::string string_type;
-    typedef char char_type;
-    typedef boost::container::static_vector<char, JSON_STRING_LENGTH> buffer_type;
+    using char_type = char;
+    using buffer_type = boost::container::static_vector<char, JSON_STRING_LENGTH>;
 //    typedef std::vector<basic_item<stl_types> > array_type;
 //    typedef std::vector<std::pair<std::string, basic_item<stl_types> > > object_type;
 //    typedef array_type::iterator array_iterator;
@@ -50,7 +50,7 @@ struct static_types
     {
         return std::string(str);
     }*/
-    static int char_value(char c)
+    static int char_value(char_type c)
     {
         return static_cast<int>(static_cast<unsigned char>(c));
     }

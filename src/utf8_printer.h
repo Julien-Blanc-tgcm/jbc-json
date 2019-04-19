@@ -68,12 +68,12 @@ struct utf8_printer
     static std::uint32_t char_value(char_type c)
     {
         typename unsigned_char<char_type>::char_type c2 = c;
-        return (std::uint32_t) c2;
+        return static_cast<std::uint32_t>(c2);
     }
 
     static void print_str(string const& val, stream& o)
     {
-        int codepoint = 0;
+        unsigned int codepoint = 0;
         int nbdigits = 0;
         int currentdigit = 0;
         for(char_type c : val)

@@ -6,7 +6,7 @@
 #ifndef JBC_JSON_BASICITEM_H
 #define JBC_JSON_BASICITEM_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <DBC/contracts.h>
 #include <boost/variant.hpp>
 
@@ -47,21 +47,21 @@ class basic_item
     friend class printer;
     template<typename Item, typename stream> friend class item_print_visitor;
 
-    typedef boost::variant<
+    using data_type = boost::variant<
         boost::blank,
         bool,
         double,
         typename traits_::array_type,
         typename traits_::object_type,
         typename traits_::string_type
-    > data_type;
+    >;
 
     data_type data_;
     bool complete_ = true;
 
 public:
 
-    typedef traits_ traits;
+    using traits = traits_;
     /**
      * @brief basic_item default constructor. Constructs a new null basic_item, which can then be morphed into a new one
      */
@@ -103,21 +103,21 @@ public:
 
     /**
      * @brief basic_item creates a new string item with the given string value
-     * @param stringValue the value of the string
+     * @param string_value the value of the string
      */
-    explicit basic_item(typename traits::string_type && stringValue) noexcept;
+    explicit basic_item(typename traits::string_type && string_value) noexcept;
 
     /**
      * @brief basic_item creates a new string item with the given string value
-     * @param stringValue the value of the string
+     * @param string_value the value of the string
      */
-    explicit basic_item(typename traits::string_type const& stringValue);
+    explicit basic_item(typename traits::string_type const& string_value);
 
     /**
      * @brief basic_item creates a new string item with the given string value
-     * @param stringValue value of the string
+     * @param string_value value of the string
      */
-    explicit basic_item(char const* stringValue);
+    explicit basic_item(char const* string_value);
 
     /**
      * Frees up resources held by this object, including all children
@@ -146,7 +146,7 @@ public:
      * @return a pointer to the property added, which allows subsequent modifications of the property.
      * note that this pointer is invalidated if another property is added
      */
-    basic_item<traits>* add_property(typename traits::string_type const& name, basic_item<traits> && value);
+    basic_item<traits>* add_property(typename traits::string_type const& name, basic_item<traits> && item);
 
     /**
      * @copydoc addProperty
@@ -409,9 +409,7 @@ basic_item<traits>::basic_item(char const* stringValue) :
 {}
 
 template<typename traits>
-basic_item<traits>::~basic_item() noexcept
-{
-}
+basic_item<traits>::~basic_item() noexcept = default;
 
 template<typename traits>
 class type_visitor : public boost::static_visitor<ItemType>
@@ -736,7 +734,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::create_item(ItemType type)
 {
     REQUIRE(this->type() == ItemType::Array, "Must be an array");
-    typename traits::array_type& arr = boost::get<typename traits::array_type>(data_);
+    auto& arr = boost::get<typename traits::array_type>(data_);
     traits::array_emplace_back(arr, type);
     return &arr.back();
 }

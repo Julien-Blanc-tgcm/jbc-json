@@ -18,15 +18,15 @@ template<typename T> using stdvector=std::vector<T>;
 
 struct stl_types
 {
-    typedef std::string string_type;
-    typedef std::string::value_type char_type;
-    typedef std::vector<char> buffer_type;
-    typedef std::vector<basic_item<stl_types> > array_type;
-    typedef std::vector<std::pair<std::string, basic_item<stl_types> > > object_type;
-    typedef array_type::iterator array_iterator;
-    typedef object_type::iterator object_iterator;
-    typedef array_type::const_iterator array_const_iterator;
-    typedef object_type::const_iterator object_const_iterator;
+    using string_type = std::string;
+    using char_type = std::string::value_type;
+    using buffer_type = std::vector<char>;
+    using array_type = std::vector<basic_item<stl_types> >;
+    using object_type = std::vector<std::pair<std::string, basic_item<stl_types> > >;
+    using array_iterator = array_type::iterator;
+    using object_iterator = object_type::iterator;
+    using array_const_iterator = array_type::const_iterator;
+    using object_const_iterator = object_type::const_iterator;
     template<typename... args>
     static void array_emplace_back(array_type& container, args... arg)
     {
@@ -54,7 +54,7 @@ struct stl_types
 using stl_item=basic_item<stl_types>;
 using stl_item_builder = item_builder<stdvector, stl_item>;
 using stl_parser = parser_bits<stdvector,stl_item_builder, std::vector<char>,char>;
-using stl_printer = printer<stl_item>;
+//using stl_printer = printer<stl_item>;
 
 inline bool parse_from_file(std::string const& file, stl_item& destination)
 {

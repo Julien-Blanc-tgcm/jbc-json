@@ -6,7 +6,7 @@
 #ifndef JBC_LIBJSON_CUSTOMIZABLE_PARSER_POLICY_H
 #define JBC_LIBJSON_CUSTOMIZABLE_PARSER_POLICY_H
 
-#include "libjson.h"
+#include <functional>
 
 template<typename string_type>
 class customizable_parser_policy

@@ -60,6 +60,9 @@ public:
     item_builder();
     item_builder(item_builder const&)=delete;
     item_builder& operator=(item_builder const&)=delete;
+    item_builder(item_builder&&) = delete;
+    item_builder& operator=(item_builder&&) = delete;
+    ~item_builder() noexcept = default;
 
     /**
      * @brief item returns the item constructed. May be complete, or not, depending on the parsing
@@ -90,17 +93,14 @@ bool item_builder<container, Item_>::begin_array_handler()
         current_item_.push_back(&item_);
         return true;
     }
-    else if(current_item_.back()->type() == ItemType::Array)
+    if(current_item_.back()->type() == ItemType::Array)
     {
         current_item_.push_back(current_item_.back()->create_item(ItemType::Array));
         return true;
     }
-    else
-    { // ItemType::Object: // object value
-        current_item_.back()->morph_to(ItemType::Array);
-        return true;
-    }
-    return false;
+    // ItemType::Object: // object value
+    current_item_.back()->morph_to(ItemType::Array);
+    return true;
 }
 
 template<template<class> class container,typename Item_>
@@ -120,16 +120,14 @@ bool item_builder<container, Item_>::begin_object_handler()
         current_item_.push_back(&item_);
         return true;
     }
-    else if(current_item_.back()->type() == ItemType::Array)
+    if(current_item_.back()->type() == ItemType::Array)
     {
         current_item_.push_back(current_item_.back()->add_item(Item_(ItemType::Object)));
         return true;
     }
-    else
-    { // ItemType::Object: // object value
-        current_item_.back()->morph_to(ItemType::Object);
-        return true;
-    }
+    // else ItemType::Object: // object value
+    current_item_.back()->morph_to(ItemType::Object);
+    return true;
 }
 
 template<template<class> class container,typename Item_>
@@ -149,14 +147,11 @@ bool item_builder<container, Item_>::boolean_handler(bool value)
         item->set_bool_value(value);
         return true;
     }
-    else
-    { // ItemType::Object:
-        current_item_.back()->morph_to(ItemType::Boolean);
-        current_item_.back()->set_bool_value(value);
-        current_item_.pop_back();
-        return true;
-    }
-    return false;
+    // else ItemType::Object:
+    current_item_.back()->morph_to(ItemType::Boolean);
+    current_item_.back()->set_bool_value(value);
+    current_item_.pop_back();
+    return true;
 }
 
 template<template<class> class container,typename Item_>
@@ -168,13 +163,11 @@ bool item_builder<container, Item_>::double_handler(double value)
         item->set_double_value(value);
         return true;
     }
-    else
-    {
-        current_item_.back()->morph_to(ItemType::Double);
-        current_item_.back()->set_double_value(value);
-        current_item_.pop_back();
-        return true;
-    }
+    // else object
+    current_item_.back()->morph_to(ItemType::Double);
+    current_item_.back()->set_double_value(value);
+    current_item_.pop_back();
+    return true;
 }
 
 #ifdef JSON_USE_LONG_INTEGERS
@@ -187,13 +180,11 @@ bool item_builder<container, Item_>::integer_handler(int64_t value)
         item->setIntegerValue(value);
         return true;
     }
-    else
-    {
-        current_item_.back()->morph_to(ItemType::Integer);
-        current_item_.back()->setIntegerValue(value);
-        current_item_.pop_back();
-        return true;
-    }
+    // else ItemType::Object
+    current_item_.back()->morph_to(ItemType::Integer);
+    current_item_.back()->setIntegerValue(value);
+    current_item_.pop_back();
+    return true;
 }
 
 #endif
@@ -206,11 +197,9 @@ bool item_builder<container, Item_>::null_handler()
         current_item_.back()->create_item(ItemType::Null);
         return true;
     }
-    else // ItemType::Object:
-    {
-        current_item_.pop_back();
-        return true;
-    }
+    // else ItemType::Object:
+    current_item_.pop_back();
+    return true;
 }
 
 template<template<class> class container,typename Item_>
@@ -218,34 +207,32 @@ bool item_builder<container, Item_>::string_handler(typename Item_::traits::buff
 {
     if(item_.type() == ItemType::Null)
     {
-        typedef typename Item_::traits::string_type string;
+        using string = typename Item_::traits::string_type;
         string s = Item_::traits::make_string(value.begin(), value.end());
         item_.morph_to_string(std::move(s));
         current_item_.push_back(&item_);
         return true;
     }
-    else if(current_item_.back()->type() == ItemType::Array)
+    if(current_item_.back()->type() == ItemType::Array)
     {
         Item_* item = current_item_.back()->create_item(ItemType::String);
-        typedef typename Item_::traits::string_type string;
+        using string = typename Item_::traits::string_type;
         string s = Item_::traits::make_string(value.begin(), value.end());
         item->set_string_value(std::move(s));
         return true;
     }
-    else
-    { // ItemType::Object:
-        typedef typename Item_::traits::string_type string;
-        string s = Item_::traits::make_string(value.begin(), value.end());
-        current_item_.back()->morph_to_string(std::move(s));
-        current_item_.pop_back();
-        return true;
-    }
+    // else ItemType::Object:
+    using string = typename Item_::traits::string_type;
+    string s = Item_::traits::make_string(value.begin(), value.end());
+    current_item_.back()->morph_to_string(std::move(s));
+    current_item_.pop_back();
+    return true;
 }
 
 template<template<class> class container,typename Item_>
 bool item_builder<container, Item_>::key_handler(typename Item_::traits::buffer_type const& value)
 {
-    typedef typename Item_::traits::string_type string;
+    using string = typename Item_::traits::string_type;
     string s = Item_::traits::make_string(value.begin(), value.end());
     Item_* item = current_item_.back()->create_property(std::move(s));
     current_item_.push_back(item);

@@ -9,6 +9,7 @@
 #include <fstream>
 #include <static_json.h>
 
+
 using namespace jbc;
 using namespace json;
 
@@ -131,7 +132,7 @@ struct ItemBuilderPrinter {
                 flushbuffer();
         }
         locator loc;
-        while(!o::string(value, loc, buf, offset))
+        while(!o::string<stl_types, decltype(value)>(value, loc, buf, offset))
         {
             flushbuffer();
         }
@@ -148,7 +149,7 @@ struct ItemBuilderPrinter {
         }
         locator loc;
         previous_is_key = true;
-        while(!o::string(value, loc, buf, offset))
+        while(!o::string<stl_types>(value, loc, buf, offset))
         {
             flushbuffer();
         }
@@ -205,7 +206,7 @@ int main(int argc, char** argv)
         FILE *file;
         file = fopen(f.c_str(), "rb");
         if(!file)
-            return false;
+            return -1;
         while(good && !feof(file))
         {
             size_t ret = fread(buf, sizeof(char), buffersize, file);
@@ -218,6 +219,8 @@ int main(int argc, char** argv)
                 parser.flushbuffer();
                 return 0;
             }
+            else
+                res = false;
         }
         else
             res = false;

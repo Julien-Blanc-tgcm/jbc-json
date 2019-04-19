@@ -6,7 +6,7 @@
 #ifndef JBC_JSON_PARSER_BITS_H
 #define JBC_JSON_PARSER_BITS_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <functional>
 #include "helper_functions.h"
 
@@ -26,11 +26,11 @@ class parser_bits :
     public parser_callbacks
 {
 
-typedef bool(parser_bits::*consumer_fn)(char_type_);
+    using consumer_fn = bool(parser_bits::*)(char_type_);
 
     container<consumer_fn> consumer_stack_;
 
-    uint32_t lastCodePoint;
+    uint32_t lastCodePoint = 0;
 #ifdef JSON_USE_LONG_INTEGERS
     bool lastNumIsFloat = false;
 #endif
@@ -87,8 +87,8 @@ typedef bool(parser_bits::*consumer_fn)(char_type_);
     /** Internals, used for factorization purpose */
    bool consume_array_itembegin_(char_type_ char_);
 public:
-    typedef buffer_type_ buffer_type;
-    typedef char_type_ char_type;
+    using buffer_type = buffer_type_;
+    using char_type = char_type_;
     parser_bits() {
         consumer_stack_.push_back(&parser_bits::consume_initial_);
     }
@@ -135,7 +135,7 @@ typename parser_callbacks,typename buffer_type_, typename char_type_>
 void parser_bits<container,parser_callbacks, buffer_type_, char_type_>::pop_state()
 {
       consumer_stack_.pop_back();
-      if(consumer_stack_.size() == 0)
+      if(consumer_stack_.empty())
         end_ = true;
 }
 
@@ -656,8 +656,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         consumer_stack_.back() = &parser_bits::consume_stringuvalue1_;
         return true;
     }
-    else
-        return make_error("Invalid token in unicode 1");
+    return make_error("Invalid token in unicode 1");
 }
 
 template<template<class> class container,
@@ -671,8 +670,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         consumer_stack_.back() = &parser_bits::consume_stringuvalue2_;
         return true;
     }
-    else
-        return make_error("Invalid token in unicode 2");
+    return make_error("Invalid token in unicode 2");
 }
 
 template<template<class> class container,
@@ -686,8 +684,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         consumer_stack_.back() = &parser_bits::consume_stringuvalue3_;
         return true;
     }
-    else
-        return make_error("Invalid token in unicode 3");
+    return make_error("Invalid token in unicode 3");
 }
 
 template<template<class> class container,
@@ -704,15 +701,11 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
             consumer_stack_.back() = &parser_bits::consume_stringuvalue4_;
             return true;
         }
-        else
-        {
-            consumer_stack_.pop_back();
-            helper_functions<buffer_type_,char_type_>::append_code_point(lastValue, lastCodePoint);
-        }
+        consumer_stack_.pop_back();
+        helper_functions<buffer_type_,char_type_>::append_code_point(lastValue, lastCodePoint);
         return true;
     }
-    else
-        return make_error("Invalid token in StringUValue3");
+    return make_error("Invalid token in StringUValue3");
 }
 
 template<template<class> class container,
@@ -815,7 +808,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         consumer_stack_.back() = &parser_bits::consume_number_;
         return true;
     }
-    else if(token_helper<char_type_>::is_token_char_E(char_) ||
+    if(token_helper<char_type_>::is_token_char_E(char_) ||
             token_helper<char_type_>::is_token_char_e(char_))
     {
 #ifdef JSON_USE_LONG_INTEGERS
@@ -825,7 +818,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         consumer_stack_.back() = &parser_bits::consume_number_;
         return true;
     }
-    else if(token_helper<char_type_>::is_token_digit19(char_) ||
+    if(token_helper<char_type_>::is_token_digit19(char_) ||
             token_helper<char_type_>::is_token_minussign(char_) ||
             token_helper<char_type_>::is_token_plussign(char_)
             )
@@ -852,11 +845,9 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         {
             return parser_callbacks::integer_handler(val.second) && consume(char_);
         }
-        else // may be an overflow : try to read as double
-        {
-            auto val2 = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
+        auto val2 = helper_functions<buffer_type_, char_type_>::string_to_double(lastValue);
+        if(val2.first)
             return parser_callbacks::double_handler(val2.second) && consume(char_); // reconsume char, but outside number !
-        }
         return make_error("Invalid integer");
     }
 #endif

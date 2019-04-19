@@ -26,9 +26,9 @@ SET(LIB_HEADERS
     src/object_iterator.h
     src/parser_bits.h
     src/parser.h
-    src/printer.h
+#    src/printer.h
     src/stl_json.h
-    src/utf8_printer.h
+#    src/utf8_printer.h
     src/output.h
     src/output_utilities.h
     src/static_json.h
@@ -37,27 +37,38 @@ SET(LIB_HEADERS
 )
 include_directories(src)
 
+enable_testing(TRUE)
+
 add_executable(jsonprint tools/jsonprint/jsonprint.cpp ${LIB_HEADERS})
 add_executable(jsonlint tools/jsonlint/jsonlint.cpp ${LIB_HEADERS})
 
 add_executable(json_conformance_test tests/json_conformance/json_conformance.cpp ${LIB_HEADERS})
+add_executable(json_output_test tests/json_output/json_output.cpp ${LIB_HEADERS})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
-find_package(Qt5Core)
-add_executable(json_conformance_qt_test tests/json_conformance/json_conformance_qt.cpp ${LIB_HEADERS})
-add_executable(json_output_test tests/json_output/json_output.cpp ${LIB_HEADERS})
-#add_executable(json_output_qt_test tests/json_output/json_output_qt.cpp ${LIB_HEADERS})
-
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 target_link_libraries(json_conformance_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-target_link_libraries(json_conformance_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
 target_link_libraries(json_output_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-#target_link_libraries(json_output_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
 
-add_test(NAME json_conformance COMMAND test_json_conformance)
+add_test(NAME json_conformance COMMAND json_conformance_test)
+add_test(NAME json_output COMMAND json_output_test)
+
+find_package(Qt5Core)
+if(Qt5Core_FOUND)
+    add_executable(json_conformance_qt_test tests/json_conformance/json_conformance_qt.cpp ${LIB_HEADERS})
+    add_executable(json_output_qt_test tests/json_output/json_output_qt.cpp ${LIB_HEADERS})
+
+    target_link_libraries(json_conformance_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
+    target_link_libraries(json_output_qt_test ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} Qt5::Core)
+
+    add_test(NAME json_conformance_qt COMMAND json_conformance_qt_test)
+    add_test(NAME json_output_qt COMMAND json_output_qt_test)
+endif()
 
 add_definitions(-DCONTRACT_POLICY=CONTRACTS_NO_CHECK)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wno-long-long -pedantic")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

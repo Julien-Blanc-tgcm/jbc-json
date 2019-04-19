@@ -7,8 +7,7 @@
 #define JBC_JSON_HELPER_FUNCTIONS_H
 
 #include <string> // for std::strtoll
-#include <errno.h> // for errno
-#include <iostream>
+#include <cerrno> // for errno
 
 namespace jbc
 {
@@ -81,24 +80,24 @@ struct helper_functions
 template<typename char_type>
 struct token_helper
 {
-    static bool is_token_space(char_type var);
-    static bool is_token_opening_square_bracket(char_type var);
-    static bool is_token_closing_square_bracket(char_type var);
-    static bool is_token_opening_curly_bracket(char_type var);
-    static bool is_token_closing_curly_bracket(char_type var);
-    static bool is_token_backslash(char_type var);
-    static bool is_token_slash(char_type var);
-    static bool is_token_colon(char_type var);
-    static bool is_token_comma(char_type var);
-    static bool is_token_double_quote(char_type var);
-    static bool is_token_plussign(char_type var);
-    static bool is_token_minussign(char_type var);
-    static bool is_token_zero(char_type var);
-    static bool is_token_digit19(char_type var);
-    static bool is_token_point(char_type var);
-    static bool is_token_char_E(char_type var);
-    static bool is_token_char_a(char_type var);
-    static bool is_token_char_b(char_type var);
+    static bool is_token_space(char_type val);
+    static bool is_token_opening_square_bracket(char_type val);
+    static bool is_token_closing_square_bracket(char_type val);
+    static bool is_token_opening_curly_bracket(char_type val);
+    static bool is_token_closing_curly_bracket(char_type val);
+    static bool is_token_backslash(char_type val);
+    static bool is_token_slash(char_type val);
+    static bool is_token_colon(char_type val);
+    static bool is_token_comma(char_type val);
+    static bool is_token_double_quote(char_type val);
+    static bool is_token_plussign(char_type val);
+    static bool is_token_minussign(char_type val);
+    static bool is_token_zero(char_type val);
+    static bool is_token_digit19(char_type val);
+    static bool is_token_point(char_type val);
+    static bool is_token_char_E(char_type val);
+    static bool is_token_char_a(char_type val);
+    static bool is_token_char_b(char_type val);
     static bool is_token_char_e(char_type val);
     static bool is_token_char_f(char_type val);
     static bool is_token_char_l(char_type val);
@@ -116,12 +115,11 @@ int8_t helper_functions<buffer_type, char_type>::hexdigit_val(char_type char_)
 {
     if(char_ >= '0' && char_ <= '9')
         return char_ - '0';
-    else if(char_ >= 'a' && char_ <= 'f')
+    if(char_ >= 'a' && char_ <= 'f')
         return char_ - 'a' + 10;
-    else if(char_ >= 'A' && char_ <= 'F')
+    if(char_ >= 'A' && char_ <= 'F')
         return char_ - 'A' + 10;
-    else
-        return -1;
+    return -1;
 }
 
 template<typename char_type>
@@ -296,19 +294,19 @@ void helper_functions<buffer_type_, char_type_>::append_special_char(buffer_type
     switch(char_)
     {
         case SpecialChar::Backspace:
-            ref.push_back((char_type_)'\b');
+            ref.push_back(static_cast<char_type_>('\b'));
             break;
         case SpecialChar::CarriageReturn:
-            ref.push_back((char_type_)'\r');
+            ref.push_back(static_cast<char_type_>('\r'));
             break;
         case SpecialChar::FormFeed:
-            ref.push_back((char_type_)'\f');
+            ref.push_back(static_cast<char_type_>('\f'));
             break;
         case SpecialChar::NewLine:
-            ref.push_back((char_type_)'\n');
+            ref.push_back(static_cast<char_type_>('\n'));
             break;
         case SpecialChar::Tab:
-            ref.push_back((char_type_)'\t');
+            ref.push_back(static_cast<char_type_>('\t'));
             break;
     }
 }
@@ -327,8 +325,8 @@ void helper_functions<buffer_type_, char_type_>::append_code_point(buffer_type_ 
                 uint8_t byte2 = 0x80;
                 byte1 += code_point >> 6; // 5 higher bits
                 byte2 += code_point & 0x3F; // 3F -> 6 lower bits
-                append(ref, (char_type_) byte1);
-                append(ref, (char_type_) byte2);
+                append(ref, static_cast<char_type_>(byte1));
+                append(ref, static_cast<char_type_>(byte2));
             }
             else if(code_point <= 0xFFFF) // code_point is less than 0xFFFF in current impl : 3 bytes because 16 bits
             {
@@ -338,9 +336,9 @@ void helper_functions<buffer_type_, char_type_>::append_code_point(buffer_type_ 
                 byte1 += code_point >> 12; // 4 higher bits
                 byte2 += (code_point & 0xFC0) >> 6; // bits 6-11
                 byte3 += code_point & 0x3F; // bits 0-5
-                append(ref, (char_type_) byte1);
-                append(ref, (char_type_) byte2);
-                append(ref, (char_type_) byte3);
+                append(ref, static_cast<char_type_>(byte1));
+                append(ref, static_cast<char_type_>(byte2));
+                append(ref, static_cast<char_type_>(byte3));
             }
             else if(code_point <= 0x200000) // 4 bytes
             {
@@ -358,7 +356,7 @@ void helper_functions<buffer_type_, char_type_>::append_code_point(buffer_type_ 
             }
             break;
         default:
-            ref.push_back((char_type_) code_point);
+            ref.push_back(static_cast<char_type_>(code_point));
             break;
     }
 }

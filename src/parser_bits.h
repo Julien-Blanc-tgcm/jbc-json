@@ -135,7 +135,7 @@ typename parser_callbacks,typename buffer_type_, typename char_type_>
 void parser_bits<container,parser_callbacks, buffer_type_, char_type_>::pop_state()
 {
       consumer_stack_.pop_back();
-      if(consumer_stack_.empty())
+      if(consumer_stack_.size() == 1) // only the initial consumer is left
         end_ = true;
 }
 
@@ -787,8 +787,8 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
         if(v < 0xDC00u)
             return make_error("Invalid unicode code point");
         uint32_t codePointLow = (v - 0xDC00);
-        uint32_t val = codePointHigh + codePointLow + 0x10000;
-        helper_functions<buffer_type_,char_type_>::append_code_point(lastValue, val);
+        uint32_t val32 = codePointHigh + codePointLow + 0x10000;
+        helper_functions<buffer_type_,char_type_>::append_code_point(lastValue, val32);
         return true;
     }
     else

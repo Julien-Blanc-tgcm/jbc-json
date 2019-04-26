@@ -60,10 +60,10 @@ class output
 {
 private:
     template<typename traits>
-    static bool is_basic_printed(char_type c);
+    static bool is_basic_printed(typename traits::char_type c);
 
     template<typename traits>
-    static std::uint32_t char_value(char_type c)
+    static std::uint32_t char_value(typename traits::char_type c)
     {
         using tchar = typename unsigned_char<char_type>::char_type;
         auto c2 = static_cast<tchar>(traits::char_value(c));
@@ -79,9 +79,9 @@ private:
     template<typename traits, typename string_type=typename traits::string_type, typename buffer=typename traits::buffer_type>
     static int char_to_tmp(string_type const& val, buffer& buf, locator& loc);
 
+public:
     template<typename string_type>
     static void append_single_codepoint(string_type& str, std::uint32_t codepoint);
-public:
 
     /**
      * Outputs a single string delimiter, aka « " ».
@@ -234,7 +234,7 @@ public:
 
 template<typename char_type>
 template<typename traits>
-bool output<char_type>::is_basic_printed(char_type c)
+bool output<char_type>::is_basic_printed(typename traits::char_type c)
 {
     unsigned int v = traits::char_value(c);
     if(c < 0x20) // non printable, includes \t, \n, \r, \f, \b
@@ -348,6 +348,7 @@ template<typename char_type>
 template<typename traits, typename string_type, typename buffer_type>
 bool output<char_type>::string_content(string_type const& value, locator& loc, buffer_type& buf, int& offset)
 {
+    REQUIRE(loc.position > 0, "loc.position must be 1 or more, 0 is reserved for \" character");
     int i = 0;
     bool needToCopyBasicData = false;
     for(i = loc.position - 1;
@@ -359,15 +360,15 @@ bool output<char_type>::string_content(string_type const& value, locator& loc, b
             // copy basic data
             if(needToCopyBasicData)
             {
-                std::copy(value.data() + loc.position - 1,
-                          value.data() + i,
-                          buf.data() + offset);
+                traits::copy_basic_data(value.data() + loc.position - 1,
+                                        value.data() + i,
+                                        buf.data() + offset);
                 offset += i + 1 - loc.position;
             }
             needToCopyBasicData = false;
             loc.position = i + 1;
             // copy specific data
-            std::array<char_type, 10> tmp;
+            std::array<char_type, 12> tmp; // 12 bytes may be needed for codepoints in the form \uXXXX\uXXXX
             auto const size = char_to_tmp<traits>(value, tmp, loc);
             if(size > 0 && (static_cast<int>(buf.size()) - offset >= size)) // something returned, and fits
             {
@@ -403,7 +404,7 @@ bool output<char_type>::string_content(string_type const& value, locator& loc, b
     {
         if(needToCopyBasicData) // if already at end, nothing to copy
         {
-            std::copy(value.data() + loc.position - 1,
+            traits::copy_basic_data(value.data() + loc.position - 1,
                       value.data() + i,
                       buf.data() + offset);
             offset += i - (loc.position - 1);
@@ -415,7 +416,7 @@ bool output<char_type>::string_content(string_type const& value, locator& loc, b
     { // does not fit
         if(needToCopyBasicData)
         {
-            std::copy(value.data() + loc.position - 1,
+            traits::copy_basic_data(value.data() + loc.position - 1,
                       value.data() + i,
                       buf.data() + offset);
             offset += i - (loc.position - 1);
@@ -438,7 +439,7 @@ bool output<char_type>::string(string_type const& value, locator& loc, buffer_ty
             return false;
     }
     bool ret;
-    if(loc.position == value.size() + 1)
+    if(loc.position == static_cast<int>(value.size() + 1))
         ret = true;
     else
         ret = string_content<traits, string_type, buffer_type>(value, loc, buf, offset);
@@ -476,107 +477,108 @@ template<typename char_type>
 template<typename traits, typename string_type, typename buffer>
 int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locator& loc)
 {
-    char_type c = value[loc.position - 1];
-    if(loc.codepointByte1 == 0) // no previous code point
+    REQUIRE(buf.size() >= 12, "Buffer must be big enough to hold the representation of a unicode char > U+10000")
+    if constexpr(traits::is_utf8)
     {
-        typename traits::string_type str;
-        if(c == char_type{'\n'})
+        char_type c = value[loc.position - 1];
+        if(loc.codepointByte1 == 0) // no previous code point
         {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'n'});
-        }
-        else if(c == char_type{'\r'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'r'});
-        }
-        else if(c == char_type{'\t'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'t'});
-        }
-        else if(c == char_type{'\\'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-        }
-        else if(c == char_type{'"'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'"'});
-        }
-        else if(c == char_type{'\f'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'f'});
-        }
-        else if(c == char_type{'\b'})
-        {
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'b'});
-        }
-        else
-        {
-            unsigned int v = traits::char_value(c);
-            if(v < 0x20u)
+            typename traits::string_type str;
+            if(c == char_type{'\n'})
             {
                 helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
-                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
-                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
-                if(v > 16u)
-                {
-                    helper_functions<typename traits::string_type, char_type>::append(str, hexchar<char_type>(v >> 4u));
-                    v = v & 0xFu;
-                }
-                else
-                    helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
-                helper_functions<typename traits::string_type, char_type>::append(str, hexchar<char_type>(v));
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'n'});
             }
-            else if(isStartOfTwoBytesCodePoint(v)) // 2 bytes unicode code point
+            else if(c == char_type{'\r'})
             {
-                loc.codepointByte1 = v;
-                return 0;
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'r'});
             }
-            else if(isStartOfThreeBytesCodePoint(v)) // 3 bytes unicode code point
+            else if(c == char_type{'\t'})
             {
-                loc.codepointByte1 = v;
-                return 0;
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'t'});
             }
-            else if(isStartOfFourBytesCodePoint(v)) // 4 bytes unicode code point
+            else if(c == char_type{'\\'})
             {
-                loc.codepointByte3 = v;
-                return 0;
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+            }
+            else if(c == char_type{'"'})
+            {
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'"'});
+            }
+            else if(c == char_type{'\f'})
+            {
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'f'});
+            }
+            else if(c == char_type{'\b'})
+            {
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                helper_functions<typename traits::string_type, char_type>::append(str, char_type{'b'});
             }
             else
             {
-                assert(false);// TODO : report error
+                unsigned int v = traits::char_value(c);
+                if(v < 0x20u)
+                {
+                    helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+                    helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
+                    helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
+                    helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
+                    if(v > 16u)
+                    {
+                        helper_functions<typename traits::string_type, char_type>::append(str, hexchar<char_type>(v >> 4u));
+                        v = v & 0xFu;
+                    }
+                    else
+                        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
+                    helper_functions<typename traits::string_type, char_type>::append(str, hexchar<char_type>(v));
+                }
+                else if(isStartOfTwoBytesCodePoint(v)) // 2 bytes unicode code point
+                {
+                    loc.codepointByte1 = static_cast<std::uint8_t>(v);
+                    return 0;
+                }
+                else if(isStartOfThreeBytesCodePoint(v)) // 3 bytes unicode code point
+                {
+                    loc.codepointByte1 = static_cast<std::uint8_t>(v);
+                    return 0;
+                }
+                else if(isStartOfFourBytesCodePoint(v)) // 4 bytes unicode code point
+                {
+                    loc.codepointByte1 = static_cast<std::uint8_t>(v);
+                    return 0;
+                }
+                else
+                {
+                    assert(false);// TODO : report error
+                }
             }
+            std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
+            return str.size() - loc.sub_position;
         }
-        std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
-        return str.size() - loc.sub_position;
-    }
-    else if(isStartOfTwoBytesCodePoint(loc.codepointByte1))
-    {
-        unsigned int codepoint = (loc.codepointByte1 - 0xC0u) << 6u;
-        typename traits::string_type str;
-        auto v = traits::char_value(c);
-        codepoint += v - 0x80u;
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
-        append_single_codepoint(str, codepoint);
-        std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
-        return str.size() - loc.sub_position;
-    }
-    else if(isStartOfThreeBytesCodePoint(loc.codepointByte1))
-    {
-        if(loc.codepointByte2 == 0)
+        else if(isStartOfTwoBytesCodePoint(loc.codepointByte1))
         {
-            loc.codepointByte2 = traits::char_value(c);
-            return 0;
+            unsigned int codepoint = (loc.codepointByte1 - 0xC0u) << 6u;
+            typename traits::string_type str;
+            auto v = traits::char_value(c);
+            codepoint += v - 0x80u;
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
+            append_single_codepoint(str, codepoint);
+            std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
+            return str.size() - loc.sub_position;
         }
-        else
+        else if(isStartOfThreeBytesCodePoint(loc.codepointByte1))
         {
+            if(loc.codepointByte2 == 0)
+            {
+                loc.codepointByte2 = static_cast<std::uint8_t>(traits::char_value(c));
+                return 0;
+            }
             typename traits::string_type str;
             unsigned int codepoint = (loc.codepointByte1&0xFu) << 12u;
             codepoint += (loc.codepointByte2 & 0x3Fu) << 6u;
@@ -588,26 +590,40 @@ int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locato
             std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
             return str.size() - loc.sub_position;
         }
+        else // four bytes code point
+        {
+            if(loc.codepointByte2 == 0)
+            {
+                loc.codepointByte2 = static_cast<std::uint8_t>(traits::char_value(c));
+                return 0;
+            }
+            if(loc.codepointByte3 == 0)
+            {
+                loc.codepointByte3 = static_cast<std::uint8_t>(traits::char_value(c));
+                return 0;
+            }
+            typename traits::string_type str;
+            unsigned int codepoint = (loc.codepointByte1 & 0x7u) << 18u;
+            codepoint += (loc.codepointByte2 & 0x3Fu) << 12u;
+            codepoint += (loc.codepointByte3 & 0x3Fu) << 6u;
+            auto v = traits::char_value(c);
+            codepoint += v & 0x3F;
+            unsigned int highorder = ((codepoint & 0xFFFFFC00u) - 0x10000u) >> 10u;
+            unsigned int firstnumber = (highorder) + 0xD800u;
+            unsigned int secondnumber = (codepoint & 0x03FFu) + 0xDC00u;
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
+            append_single_codepoint(str, firstnumber);
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
+            helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
+            append_single_codepoint(str, secondnumber);
+            std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
+            return str.size() - loc.sub_position;
+        }
     }
-    else // four bytes code point
+    else
     {
-        typename traits::string_type str;
-        unsigned int codepoint = (loc.codepointByte1 & 0x7u) << 18u;
-        codepoint += (loc.codepointByte2 & 0x3Fu) << 12u;
-        codepoint += (loc.codepointByte3 & 0x3Fu) << 6u;
-        auto v = traits::char_value(c);
-        codepoint += v & 0x3F;
-        unsigned int highorder = ((codepoint & 0xFFFFFC00u) - 0x10000u) >> 10u;
-        unsigned int firstnumber = (highorder) + 0xD800u;
-        unsigned int secondnumber = (codepoint & 0x03FFu) + 0xDC00u;
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
-        append_single_codepoint(str, firstnumber);
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'\\'});
-        helper_functions<typename traits::string_type, char_type>::append(str, char_type{'u'});
-        append_single_codepoint(str, secondnumber);
-        std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
-        return str.size() - loc.sub_position;
+        return traits::char_to_tmp(value, buf, loc);
     }
 }
 

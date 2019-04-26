@@ -49,6 +49,8 @@ struct stl_types
     {
         return static_cast<int>(static_cast<unsigned char>(c));
     }
+    static constexpr const bool is_utf8 = true;
+    static void copy_basic_data(char const* first, char const* last, char * dest);
 };
 
 using stl_item=basic_item<stl_types>;
@@ -128,6 +130,11 @@ inline bool parse_one_document(stream & f, stl_item& destination)
         return true;
     }
     return false;
+}
+
+void stl_types::copy_basic_data(const char *first, const char *last, char *dest)
+{
+    std::copy(first, last, dest);
 }
 
 }

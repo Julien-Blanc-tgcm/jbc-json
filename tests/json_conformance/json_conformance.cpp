@@ -432,3 +432,44 @@ BOOST_AUTO_TEST_CASE(fail33, *utf::description("mismatch"))
     bool res = parse_from_stream(s,i);
     BOOST_TEST(!res);
 }
+
+BOOST_AUTO_TEST_CASE(largeunicodechar, *utf::description("Parsing a string with a large unicode char shall succeed"))
+{
+    std::string str = R"json("st\uD83D\uDCABau")json";
+    std::istringstream s(str);
+    jbc::json::stl_item i;
+    bool res = parse_from_stream(s, i);
+    BOOST_TEST(res);
+    BOOST_TEST(i.string_value() == u8"st💫au");
+}
+
+BOOST_AUTO_TEST_CASE(wrongunicodechar, *utf::description("Parsing a string with a large unicode char that is invalid shall fail"))
+{
+    std::string str = R"json("st\uD83D\uDCu2au")json";
+    std::istringstream s(str);
+    jbc::json::stl_item i;
+    bool res = parse_from_stream(s, i);
+    BOOST_TEST(!res);
+    bool rightType = i.type() == jbc::json::ItemType::Null;
+    BOOST_TEST(rightType);
+}
+
+BOOST_AUTO_TEST_CASE(parse_single_document, *utf::description("Parsing a string containing multiple documents shall stop at end of first"))
+{
+    std::string str = R"json({"first" : [12, 64, true, 34, "test"]}{"second": [13, 64, false, 34, "test"]}")json";
+    std::istringstream s(str);
+    jbc::json::stl_item i;
+    bool res = parse_one_document(s, i);
+    BOOST_TEST(res);
+    auto prop = i.property("first");
+    BOOST_TEST(prop != nullptr);
+    BOOST_TEST(prop->child_count() == 5);
+    BOOST_TEST(prop->item(2)->bool_value());
+    jbc::json::stl_item i2;
+    res = parse_one_document(s, i2);
+    BOOST_TEST(res);
+    prop = i2.property("second");
+    BOOST_TEST(prop != nullptr);
+    BOOST_TEST(prop->child_count() == 5);
+    BOOST_TEST(!prop->item(2)->bool_value());
+}

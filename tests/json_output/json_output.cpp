@@ -385,6 +385,21 @@ BOOST_AUTO_TEST_CASE(stringoutput12, *utf::description("Output of a string with 
     BOOST_TEST(output == R"json("st\uCAFEau")json");
 }
 
+BOOST_AUTO_TEST_CASE(stringoutput13, *utf::description("Output of a 4bytes utf8 character"))
+{
+    jbc::json::output<char> o;
+    std::array<char, 50> buf;
+    std::string v{u8"st💫au"};
+    jbc::json::locator loc;
+    int offset = 0;
+    bool res = false;
+    res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
+    BOOST_TEST(res);
+    buf[offset] = 0;
+    std::string output = buf.data();
+    BOOST_TEST(output == R"json("st\uD83D\uDCABau")json");
+}
+
 BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a large enough buffer"))
 {
     jbc::json::output<char> o;
@@ -488,7 +503,6 @@ BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a v
         for(int i = 0; i < offset; ++i)
             str.push_back(buf[i]);
     }
-    buf[offset] = 0;
     BOOST_TEST(res == true);
     BOOST_TEST(str == R"json(["sample value",false,null,[[],null,""]])json");
 }
@@ -513,6 +527,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput3, *utf::description("Output of an array, char b
     {
         offset = 0;
         res = o.array<decltype(buf), jbc::json::stl_item>(arr.begin_array(), arr.end_array(), loc, buf, offset);
+        assert(offset < 2);
         for(int i = 0; i < offset; ++i)
             str.push_back(buf[i]);
     }
@@ -589,7 +604,7 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
         std::array<char, 50> buf;
         jbc::json::locator loc;
 //        jbc::json::output<char> o;
-        bool res = false;
+        res = false;
         while(!res)
         {
             int offset = 0;

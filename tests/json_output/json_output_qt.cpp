@@ -206,8 +206,8 @@ BOOST_AUTO_TEST_CASE(nulloutput3, *utf::description("Output end of a partial nul
 
 BOOST_AUTO_TEST_CASE(stringoutput1, *utf::description("Complete output of a string with no escaped characters"))
 {
-    jbc::json::output<QChar> o;
-    std::array<QChar, 50> buf;
+    jbc::json::output<char> o;
+    std::array<char, 50> buf;
     QString v{"A sample string"};
     jbc::json::locator loc;
     loc.position = 0;
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(stringoutput1, *utf::description("Complete output of a stri
     BOOST_TEST(offset == v.size() + 2);
     BOOST_TEST(loc.position == 0);
     BOOST_TEST(res);
-    QString str{buf.data(), v.size() + 2};
+    std::string str{buf.data(), static_cast<unsigned int>(v.size()) + 2};
     bool testpassed = str == "\"A sample string\"";
     BOOST_TEST(testpassed);
 }
@@ -240,8 +240,8 @@ BOOST_AUTO_TEST_CASE(stringoutput2, *utf::description("Incomplete output of a st
 
 BOOST_AUTO_TEST_CASE(stringoutput3, *utf::description("End of output of a string with no escaped characters, with offset"))
 {
-    jbc::json::output<QChar> o;
-    std::array<QChar, 10> buf;
+    jbc::json::output<char> o;
+    std::array<char, 10> buf;
     QString v{"A sample string"};
     jbc::json::locator loc;
     loc.position = 10;
@@ -250,15 +250,15 @@ BOOST_AUTO_TEST_CASE(stringoutput3, *utf::description("End of output of a string
     BOOST_TEST(offset == 9);
     BOOST_TEST(loc.position == 0);
     BOOST_TEST(res);
-    QString str{buf.data() + 2, 7};
+    std::string str{buf.data() + 2, 7};
     bool testpassed = str == "string\"";
     BOOST_TEST(testpassed);
 }
 
 BOOST_AUTO_TEST_CASE(stringoutput4, *utf::description("Output of a complete string with special character"))
 {
-    jbc::json::output<QChar> o;
-    std::array<QChar, 50> buf;
+    jbc::json::output<char> o;
+    std::array<char, 50> buf;
     QString v{"A sample \"string\""};
     jbc::json::locator loc;
     loc.position = 0;
@@ -267,14 +267,14 @@ BOOST_AUTO_TEST_CASE(stringoutput4, *utf::description("Output of a complete stri
     BOOST_TEST(offset == 21);
     BOOST_TEST(loc.position == 0);
     BOOST_TEST(res);
-    QString str{buf.data(), offset};
+    std::string str{buf.data(), static_cast<unsigned int>(offset)};
     bool testpassed = str == "\"A sample \\\"string\\\"\"";
     BOOST_TEST(testpassed);
 }
 
 BOOST_AUTO_TEST_CASE(stringoutput5, *utf::description("Output of a incomplete string with special character"))
 {
-    jbc::json::output<QChar> o;
+    jbc::json::output<char> o;
     std::array<QChar, 15> buf;
     QString v{"A sample \"string\""};
     jbc::json::locator loc;
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(stringoutput9, *utf::description("Output of a small string 
     BOOST_TEST(loc.position == 1);
     BOOST_TEST(loc.sub_position == 4);
     BOOST_TEST(!res);
-    QString str{buf.data(), 2};
+    QString str{buf.data() + 2, 2};
     bool testpassed = str == "00";
     std::cerr << str.toUtf8().toStdString() << std::endl;
     BOOST_TEST(testpassed);
@@ -395,14 +395,14 @@ BOOST_AUTO_TEST_CASE(stringoutput11, *utf::description("Output of a string with 
     res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res);
-    output = QString::fromRawData(buf.data(), buf.size());
+    output = QString::fromRawData(buf.data(), offset);
     BOOST_TEST(output.toStdString() == R"json("st\uCAFEau")json");
 }
 
 BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a large enough buffer"))
 {
-    jbc::json::output<QChar> o;
-    std::array<QChar, 500> buf;
+    jbc::json::output<char> o;
+    std::array<char, 500> buf;
     jbc::json::QJsonItem obj(jbc::json::ItemType::Object);
     obj.create_property("property1", jbc::json::ItemType::String)->set_string_value("toto");
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
@@ -476,7 +476,9 @@ BOOST_AUTO_TEST_CASE(arrayoutput, *utf::description("Output of an array, in a la
     bool res = o.array<decltype(buf), jbc::json::QJsonItem>(arr.begin_array(), arr.end_array(), loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res == true);
-    BOOST_TEST(memcmp(buf.data(), R"json(["sample value",false,null,[]])json", offset) ==0);
+    QString str = QString::fromRawData(buf.data(), offset);
+    bool equal = str == R"json(["sample value",false,null,[]])json";
+    BOOST_TEST(equal);
 }
 
 BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a very small buffer"))
@@ -502,7 +504,6 @@ BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a v
         for(int i = 0; i < offset; ++i)
             str.push_back(buf[i]);
     }
-    buf[offset] = 0;
     BOOST_TEST(res == true);
     BOOST_TEST(str.toStdString() == R"json(["sample value",false,null,[[],null,""]])json");
 }
@@ -599,20 +600,22 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
     bool res = parse_from_stream(s, i);
     if(res)
     {
+std::cerr << (*i.begin_array()).string_value().toStdString() << std::endl;
         QString output;
-        std::array<QChar, 50> buf;
+        std::array<char, 50> buf;
         jbc::json::locator loc;
-//        jbc::json::output<QChar> o;
-        bool res = false;
+        res = false;
         while(!res)
         {
             int offset = 0;
-            jbc::json::output_visitor<decltype (buf), jbc::json::QJsonItem, QChar>
+            jbc::json::output_visitor<decltype (buf), jbc::json::QJsonItem, char>
                     v{buf, offset, loc};
             res = boost::apply_visitor(v, i);
 
 //            res = o.sensible(i, loc, buf, offset);
-            output.append(QString::fromRawData(buf.begin(), offset));
+//            output.append(QString::fromRawData(buf.begin(), offset));
+            output.append(QString::fromUtf8(buf.begin(), offset));
+        std::cout << output.toStdString() << std::endl;
         }
         BOOST_TEST(res == true);
         BOOST_TEST(output.toStdString() == R"json(["JSON Test Pattern pass1",{"object with 1 member":["array with 1 element"]},{},[],-42,true,false,null,{"integer":1234567890,"real":-9876.54321,"e":1.23456789e-13,"E":1.23456789e+34,"":2.345678901e+76,"zero":0,"one":1,"space":" ","quote":"\"","backslash":"\\","controls":"\b\f\n\r\t","slash":"/ & /","alpha":"abcdefghijklmnopqrstuvwyz","ALPHA":"ABCDEFGHIJKLMNOPQRSTUVWYZ","digit":"0123456789","0123456789":"digit","special":"`1~!@#$%^&*()_+-={':[,]}|;.</>?","hex":"\u0123\u4567\u89AB\uCDEF\uABCD\uEF4A","true":true,"false":false,"null":null,"array":[],"object":{},"address":"50 St. James Street","url":"http://www.JSON.org/","comment":"// /* <!-- --","# -- --> */":" "," s p a c e d ":[1,2,3,4,5,6,7],"compact":[1,2,3,4,5,6,7],"jsontext":"{\"object with 1 member\":[\"array with 1 element\"]}","quotes":"&#34; \" %22 0x22 034 &#x22;","/\\\"\uCAFE\uBABE\uAB98\uFCDE\uBCDA\uEF4A\b\f\n\r\t`1~!@#$%^&*()_+-=[]{}|;:',./<>?":"A key can be any string"},0.5,98.6,99.44,1066,10,1,0.1,1,2,2,"rosebud"])json");

@@ -42,12 +42,18 @@ struct qt_types
     }
     static QString make_string(QChar const* begin, QChar const* end)
     {
-        return QString::fromRawData(begin, end - begin);
+        return QString(begin, end - begin);
     }
     static int char_value(QChar c)
     {
         return c.unicode();
     }
+    template<typename buffer>
+    static int char_to_tmp(string_type const& value, buffer& buf, locator& loc);
+    static bool is_start_of_two_words_code_point(int value);
+    static constexpr const bool is_utf8 = false;
+    static void copy_basic_data(QChar const* first, QChar const* last, char* dest);
+    static void copy_basic_data(QChar const* first, QChar const* last, QChar* dest);
 };
 
 template<>
@@ -145,6 +151,119 @@ inline bool parse_from_stream(QTextStream & f, QJsonItem& destination)
         }
     }
     return false;
+}
+
+bool qt_types::is_start_of_two_words_code_point(int value)
+{
+    return value >= 0xD7FF && value < 0xE000;
+}
+
+void qt_types::copy_basic_data(const QChar *first, const QChar *last, char *dest)
+{
+    auto cur = dest;
+    for(auto it = first; it != last; ++it,++cur)
+    {
+        *cur = static_cast<char>(it->unicode());
+    }
+}
+
+void qt_types::copy_basic_data(const QChar *first, const QChar *last, QChar *dest)
+{
+    std::copy(first, last, dest);
+}
+
+template<typename buffer>
+int qt_types::char_to_tmp(const string_type &value, buffer &buf, locator &loc)
+{
+    char_type c = value[loc.position - 1];
+    if(loc.codepointByte1 == 0) // no previous code point
+    {
+        QVector<typename buffer::value_type> str;
+        if(c == char_type{'\n'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'n'});
+        }
+        else if(c == char_type{'\r'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'r'});
+        }
+        else if(c == char_type{'\t'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'t'});
+        }
+        else if(c == char_type{'\\'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+        }
+        else if(c == char_type{'"'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\"'});
+        }
+        else if(c == char_type{'\f'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'f'});
+        }
+        else if(c == char_type{'\b'})
+        {
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+            helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'b'});
+        }
+        else
+        {
+            unsigned int v = char_value(c);
+            if(v < 0x20u)
+            {
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'0'});
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'0'});
+                if(v > 16u)
+                {
+                    helper_functions<decltype(str), typename buffer::value_type>::append(str, hexchar<typename buffer::value_type>(v >> 4u));
+                    v = v & 0xFu;
+                }
+                else
+                    helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'0'});
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, hexchar<typename buffer::value_type>(v));
+            }
+            else if(is_start_of_two_words_code_point(v)) // 2 words utf16 code point
+            {
+                loc.codepointByte1 = v & 0xFFu;
+                loc.codepointByte2 = (v >> 8u) & 0xFFu;
+                return 0;
+            }
+            else
+            {
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+                helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
+                output<typename buffer::value_type>::append_single_codepoint(str, v);
+            }
+        }
+        std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
+        return str.size() - loc.sub_position;
+    }
+    else if(loc.codepointByte1 != 0) // a current double word utf16 character is being processed
+    {
+        auto v = char_value(c);
+        loc.codepointByte1 = v & 0xFFu;
+        loc.codepointByte2 = (v >> 8u) & 0xFFu;
+        auto high = loc.codepointByte1 + (loc.codepointByte2 << 8u);
+        unsigned int codepoint = QChar::surrogateToUcs4(high, v);
+        QVector<typename buffer::value_type> str;
+        helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+        helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
+        output<typename buffer::value_type>::append_single_codepoint(str, codepoint);
+        std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
+        return str.size() - loc.sub_position;
+    }
+    assert(false);
+    return 0;
 }
 
 }

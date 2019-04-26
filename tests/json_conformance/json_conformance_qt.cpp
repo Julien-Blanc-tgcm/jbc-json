@@ -11,6 +11,17 @@
 
 namespace utf = boost::unit_test;
 
+BOOST_AUTO_TEST_CASE(pass_simple1, *utf::description("Very simple document"))
+{
+    QString str = R"json([                 "JSON Test Pattern pass1","json2"])json";
+    jbc::json::QJsonItem i;
+    QTextStream s(&str);
+    bool res = parse_from_stream(s, i);
+    BOOST_TEST(res);
+    auto first_string = i.begin_array()->string_value().toStdString();
+    BOOST_TEST(first_string == "JSON Test Pattern pass1");
+}
+
 BOOST_AUTO_TEST_CASE(pass1, *utf::description("Sample json document"))
 {
     QString str = R"json([
@@ -75,6 +86,8 @@ BOOST_AUTO_TEST_CASE(pass1, *utf::description("Sample json document"))
     QTextStream s(&str);
     bool res = parse_from_stream(s, i);
     BOOST_TEST(res);
+    auto first_string = i.begin_array()->string_value().toStdString();
+    BOOST_TEST(first_string == "JSON Test Pattern pass1");
 }
 
 BOOST_AUTO_TEST_CASE(pass2, *utf::description("Nesting not an issue"))

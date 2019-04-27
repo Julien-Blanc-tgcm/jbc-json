@@ -7,12 +7,14 @@
 #define JBC_JSON_OUTPUT_H
 
 #include <DBC/contracts.h>
-#include <array>
-#include <cstdlib>
-#include <memory>
 #include "output_utilities.h"
 #include "basic_item.h"
 #include "helper_functions.h"
+
+#include <array>
+#include <cassert>
+#include <cstdlib>
+#include <memory>
 
 namespace jbc
 {
@@ -184,7 +186,7 @@ public:
  * @remark when returning true, the locator is reset
  */
 template<typename buffer, typename item, typename char_type>
-class output_visitor : public boost::static_visitor<bool>
+class output_visitor /*: public boost::static_visitor<bool>*/
 {
     buffer& buf_;
     int& offset_;
@@ -226,7 +228,7 @@ public:
     {
         return output<char_type>::boolean(value, loc_, buf_, offset_);
     }
-    bool operator()(boost::blank)
+    bool operator()(std::monostate)
     {
         return output<char_type>::null(loc_, buf_, offset_);
     }
@@ -734,7 +736,7 @@ bool output<char_type>::object(
                 locator subitem_location_empty;
                 locator& subitem_location = loc.position_in_subitem != nullptr?*loc.position_in_subitem:subitem_location_empty;
                 output_visitor<buffer, item, char_type> v{buf, offset, subitem_location};
-                res = boost::apply_visitor(v, it->second);
+                res = it->second.apply_visitor(v);
                 if(!res)
                 {
                     loc.position_in_subitem.reset(new locator{std::move(subitem_location)});
@@ -844,7 +846,7 @@ bool output<char_type>::array(
                 locator subitem_location_empty;
                 locator& subitem_location = loc.position_in_subitem != nullptr?*loc.position_in_subitem:subitem_location_empty;
                 output_visitor<buffer, item, char_type> v{buf, offset, subitem_location};
-                res = boost::apply_visitor(v, *it);
+                res = it->apply_visitor(v);
                 if(!res)
                 {
                     loc.position_in_subitem.reset(new locator{std::move(subitem_location)});
@@ -896,7 +898,7 @@ bool output_json(std::ostream& stream, item const& the_item)
     bool res = false;
     while(!res && stream.good())
     {
-        res = boost::apply_visitor(output, the_item);
+        res = the_item.apply_visitor(output);
         stream.write(buf.data(), offset);
         offset = 0;
     }

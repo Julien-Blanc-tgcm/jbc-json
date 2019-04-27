@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <DBC/contracts.h>
-#include <boost/variant.hpp>
+#include <variant>
 
 namespace jbc
 {
@@ -47,8 +47,8 @@ class basic_item
     friend class printer;
     template<typename Item, typename stream> friend class item_print_visitor;
 
-    using data_type = boost::variant<
-        boost::blank,
+    using data_type = std::variant<
+        std::monostate,
         bool,
         double,
         typename traits_::array_type,
@@ -329,31 +329,31 @@ public:
     int child_count() const;
 
     template<typename visitor>
-    typename visitor::result_type
-    apply_visitor(visitor& v)
+    auto
+    apply_visitor(visitor& v) -> decltype(std::visit(v, data_))
     {
-        return boost::apply_visitor(v, data_);
+        return std::visit(v, data_);
     }
 
     template<typename visitor>
-    typename visitor::result_type
-    apply_visitor(visitor& v) const
+    auto
+    apply_visitor(visitor& v)  const -> decltype(std::visit(v, data_))
     {
-        return boost::apply_visitor(v, data_);
+        return std::visit(v, data_);
     }
 };
 
 
 template<typename traits>
 basic_item<traits>::basic_item(bool async) noexcept :
-    data_{boost::blank{}},
+    data_{std::monostate{}},
     complete_{!async}
 {
 }
 
 template<typename traits>
 basic_item<traits>::basic_item(ItemType type, bool async) noexcept :
-    data_{boost::blank{}},
+    data_{std::monostate{}},
     complete_(!async)
 {
     morph_to(type);
@@ -370,11 +370,11 @@ basic_item<traits> basic_item<traits>::clone(basic_item<traits> const& other) no
 
 template<typename traits>
 basic_item<traits>::basic_item(basic_item<traits> &&other) noexcept :
-    data_{boost::blank{}},
+    data_{std::monostate{}},
     complete_(other.complete_)
 {
     data_ = std::move(other.data_);
-    other.data_ = boost::blank{};
+    other.data_ = std::monostate{};
 }
 
 template<typename traits>
@@ -383,7 +383,7 @@ basic_item<traits> & basic_item<traits>::operator =(basic_item<traits> && other)
     if(this != &other)
     {
         data_ = std::move(other.data_);
-        other.data_ = boost::blank{};
+        other.data_ = std::monostate{};
         complete_ = other.complete_;
     }
     return *this;
@@ -412,10 +412,10 @@ template<typename traits>
 basic_item<traits>::~basic_item() noexcept = default;
 
 template<typename traits>
-class type_visitor : public boost::static_visitor<ItemType>
+class type_visitor /*: public boost::static_visitor<ItemType>*/
 {
 public:
-    ItemType operator()(boost::blank)const { return ItemType::Null; }
+    ItemType operator()(std::monostate)const { return ItemType::Null; }
     ItemType operator()(bool)const { return ItemType::Boolean; }
     ItemType operator()(double)const { return ItemType::Double; }
 #ifdef JSON_USE_LONG_INTEGERS
@@ -429,7 +429,7 @@ public:
 template<typename traits>
 ItemType basic_item<traits>::type() const
 {
-    return boost::apply_visitor(type_visitor<traits>{}, data_);
+    return std::visit(type_visitor<traits>{}, data_);
 }
 
 template<typename traits>
@@ -463,7 +463,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::add_item(basic_item<traits> const& value)
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    auto& arr = boost::get<typename traits::array_type>(data_);
+    auto& arr = std::get<typename traits::array_type>(data_);
     traits::array_emplace_back(arr, basic_item<traits>::clone(value));
     return &arr.back();
 }
@@ -472,7 +472,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::add_item(basic_item<traits>&& value)
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    auto& arr = boost::get<typename traits::array_type>(data_);
+    auto& arr = std::get<typename traits::array_type>(data_);
     traits::array_emplace_back(arr, std::move(value));
     return &arr.back();
 }
@@ -481,7 +481,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::add_property(typename traits::string_type const& name, basic_item<traits> && item)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     traits::object_emplace_back(obj, name, std::move(item));
     return &obj.back().second;
 }
@@ -490,7 +490,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::add_property(typename traits::string_type && name, basic_item<traits> && item)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     traits::object_emplace_back(obj, std::move(name), std::move(item));
     return &obj.back().second;
 }
@@ -499,7 +499,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::create_property(typename traits::string_type const&name, ItemType itemType)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     traits::object_emplace_back(obj, name, basic_item(itemType));
     return obj.back().second;
 }
@@ -508,7 +508,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::create_property(typename traits::string_type &&name, ItemType itemType)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     traits::object_emplace_back(obj, std::move(name), basic_item(itemType));
     return &obj.back().second;
 }
@@ -517,7 +517,7 @@ template<typename traits>
 basic_item<traits> * basic_item<traits>::property(typename traits::string_type const& name)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     for(auto it = obj.begin(); it != obj.end(); ++it)
     {
         if(it->first == name)
@@ -530,7 +530,7 @@ template<typename traits>
 basic_item<traits> const * basic_item<traits>::property(typename traits::string_type const& name) const
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    auto& obj = boost::get<typename traits::object_type>(data_);
+    auto& obj = std::get<typename traits::object_type>(data_);
     for(auto it = obj.begin(); it != obj.end(); ++it)
     {
         if(it->first == name)
@@ -594,7 +594,7 @@ template<typename traits>
 typename traits::string_type const& basic_item<traits>::string_value() const
 {
     REQUIRE(type() == ItemType::String, "Must be a string");
-    return boost::get<typename traits::string_type>(data_);
+    return std::get<typename traits::string_type>(data_);
 }
 
 #ifdef JSON_USE_LONG_INTEGERS
@@ -610,7 +610,7 @@ template<typename traits>
 int64_t basic_item<traits>::integer_value() const
 {
     REQUIRE(type() == ItemType::Integer, "Must be an integer");
-    return boost::get<std::int64_t>(data_);
+    return std::get<std::int64_t>(data_);
 }
 
 #endif
@@ -626,7 +626,7 @@ template<typename traits>
 double basic_item<traits>::double_value() const
 {
     REQUIRE(type() == ItemType::Double, "Must be a double");
-    return boost::get<double>(data_);
+    return std::get<double>(data_);
 }
 
 template<typename traits>
@@ -640,61 +640,61 @@ template<typename traits>
 bool basic_item<traits>::bool_value() const
 {
     REQUIRE(type() == ItemType::Boolean, "Must be a boolean");
-    return boost::get<bool>(data_);
+    return std::get<bool>(data_);
 }
 
 template<typename traits>
 typename traits::array_iterator basic_item<traits>::begin_array()
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    return boost::get<typename traits::array_type>(data_).begin();
+    return std::get<typename traits::array_type>(data_).begin();
 }
 
 template<typename traits>
 typename traits::array_const_iterator basic_item<traits>::begin_array() const
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    return boost::get<typename traits::array_type>(data_).begin();
+    return std::get<typename traits::array_type>(data_).begin();
 }
 
 template<typename traits>
 typename traits::array_iterator basic_item<traits>::end_array()
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    return boost::get<typename traits::array_type>(data_).end();
+    return std::get<typename traits::array_type>(data_).end();
 }
 
 template<typename traits>
 typename traits::array_const_iterator basic_item<traits>::end_array() const
 {
     REQUIRE(type() == ItemType::Array, "Must be an array");
-    return boost::get<typename traits::array_type>(data_).end();
+    return std::get<typename traits::array_type>(data_).end();
 }
 
 template<typename traits>
 typename traits::object_iterator basic_item<traits>::begin_object()
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    return boost::get<typename traits::object_type>(data_).begin();
+    return std::get<typename traits::object_type>(data_).begin();
 }
 
 template<typename traits>
 typename traits::object_const_iterator basic_item<traits>::begin_object() const
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    return boost::get<typename traits::object_type>(data_).begin();
+    return std::get<typename traits::object_type>(data_).begin();
 }
 template<typename traits>
 typename traits::object_iterator basic_item<traits>::end_object()
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    return boost::get<typename traits::object_type>(data_).end();
+    return std::get<typename traits::object_type>(data_).end();
 }
 template<typename traits>
 typename traits::object_const_iterator basic_item<traits>::end_object() const
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    return boost::get<typename traits::object_type>(data_).end();
+    return std::get<typename traits::object_type>(data_).end();
 }
 
 template<typename traits>
@@ -702,7 +702,7 @@ void basic_item<traits>::remove_property(typename traits::string_type const& nam
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
     REQUIRE(property(name) != nullptr, "Property must be found in object");
-    typename traits::object_type& obj = boost::get<typename traits::object_type>(data_);
+    typename traits::object_type& obj = std::get<typename traits::object_type>(data_);
     for(auto it = obj.begin(); it != obj.end(); ++it)
     {
         if(it->first == name)
@@ -717,7 +717,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::set_property(typename traits::string_type const& name, basic_item<traits> && item)
 {
     REQUIRE(type() == ItemType::Object, "Must be an object");
-    typename traits::object_type& obj = boost::get<typename traits::object_type>(data_);
+    typename traits::object_type& obj = std::get<typename traits::object_type>(data_);
     for(auto it = obj.begin(); it != obj.end(); ++it)
     {
         if(it->first == name)
@@ -734,7 +734,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::create_item(ItemType type)
 {
     REQUIRE(this->type() == ItemType::Array, "Must be an array");
-    auto& arr = boost::get<typename traits::array_type>(data_);
+    auto& arr = std::get<typename traits::array_type>(data_);
     traits::array_emplace_back(arr, type);
     return &arr.back();
 }
@@ -749,7 +749,7 @@ template<typename traits>
 basic_item<traits>* basic_item<traits>::item(int idx)
 {
     REQUIRE(this->type() == ItemType::Array, "Must be an array");
-    typename traits::array_type& arr = boost::get<typename traits::array_type>(data_);
+    typename traits::array_type& arr = std::get<typename traits::array_type>(data_);
     return &arr[idx];
 }
 
@@ -757,17 +757,17 @@ template<typename traits>
 basic_item<traits> const * basic_item<traits>::item(int idx) const
 {
     REQUIRE(this->type() == ItemType::Array, "Must be an array");
-    typename traits::array_type& arr = boost::get<typename traits::array_type>(data_);
+    typename traits::array_type& arr = std::get<typename traits::array_type>(data_);
     return &arr[idx];
 }
 
 template<typename traits>
-class size_visitor : public boost::static_visitor<size_t>
+class size_visitor /*: public boost::static_visitor<size_t>*/
 {
 public:
     size_t operator()(bool)const { return 0; }
     size_t operator()(double)const { return 0; }
-    size_t operator()(boost::blank)const { return 0; }
+    size_t operator()(std::monostate)const { return 0; }
     size_t operator()(std::uint64_t)const { return 0; }
     size_t operator()(typename traits::string_type const& /*str*/)const { return 0; }
     size_t operator()(typename traits::array_type const& arr)const { return arr.size(); }
@@ -778,7 +778,7 @@ template<typename traits>
 int basic_item<traits>::child_count() const
 {
     REQUIRE(this->type() == ItemType::Array || this->type() == ItemType::Object, "Must be an array or an object");
-    return boost::apply_visitor(size_visitor<traits>{}, data_);
+    return std::visit(size_visitor<traits>{}, data_);
 }
 
 }

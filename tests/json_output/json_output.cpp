@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
             int offset = 0;
             jbc::json::output_visitor<decltype (buf), jbc::json::stl_item, char>
                     v{buf, offset, loc};
-            res = boost::apply_visitor(v, i);
+            res = i.apply_visitor(v);
 
 //            res = o.sensible(i, loc, buf, offset);
             auto end = buf.begin();

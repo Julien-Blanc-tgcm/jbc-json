@@ -251,14 +251,14 @@ int qt_types::char_to_tmp(const string_type &value, buffer &buf, locator &loc)
     else if(loc.codepointByte1 != 0) // a current double word utf16 character is being processed
     {
         auto v = char_value(c);
-        loc.codepointByte1 = v & 0xFFu;
-        loc.codepointByte2 = (v >> 8u) & 0xFFu;
         auto high = loc.codepointByte1 + (loc.codepointByte2 << 8u);
-        unsigned int codepoint = QChar::surrogateToUcs4(high, v);
         QVector<typename buffer::value_type> str;
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
-        output<typename buffer::value_type>::append_single_codepoint(str, codepoint);
+        output<typename buffer::value_type>::append_single_codepoint(str, high);
+        helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
+        helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
+        output<typename buffer::value_type>::append_single_codepoint(str, v);
         std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
         return str.size() - loc.sub_position;
     }

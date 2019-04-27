@@ -359,7 +359,6 @@ BOOST_AUTO_TEST_CASE(stringoutput9, *utf::description("Output of a small string 
     BOOST_TEST(!res);
     QString str{buf.data() + 2, 2};
     bool testpassed = str == "00";
-    std::cerr << str.toUtf8().toStdString() << std::endl;
     BOOST_TEST(testpassed);
 }
 
@@ -397,6 +396,21 @@ BOOST_AUTO_TEST_CASE(stringoutput11, *utf::description("Output of a string with 
     BOOST_TEST(res);
     output = QString::fromRawData(buf.data(), offset);
     BOOST_TEST(output.toStdString() == R"json("st\uCAFEau")json");
+}
+
+BOOST_AUTO_TEST_CASE(stringoutput13, *utf::description("Output of a 4bytes utf8 character"))
+{
+    jbc::json::output<QChar> o;
+    std::array<QChar, 50> buf;
+    QString v = QString::fromUtf8(u8"st💫au");
+    jbc::json::locator loc;
+    int offset = 0;
+    bool res = false;
+    res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
+    BOOST_TEST(res);
+    buf[offset] = 0;
+    QString output(buf.data(), offset);
+    BOOST_TEST(output.toStdString() == R"json("st\uD83D\uDCABau")json");
 }
 
 BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a large enough buffer"))
@@ -600,7 +614,6 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
     bool res = parse_from_stream(s, i);
     if(res)
     {
-std::cerr << (*i.begin_array()).string_value().toStdString() << std::endl;
         QString output;
         std::array<char, 50> buf;
         jbc::json::locator loc;
@@ -615,7 +628,6 @@ std::cerr << (*i.begin_array()).string_value().toStdString() << std::endl;
 //            res = o.sensible(i, loc, buf, offset);
 //            output.append(QString::fromRawData(buf.begin(), offset));
             output.append(QString::fromUtf8(buf.begin(), offset));
-        std::cout << output.toStdString() << std::endl;
         }
         BOOST_TEST(res == true);
         BOOST_TEST(output.toStdString() == R"json(["JSON Test Pattern pass1",{"object with 1 member":["array with 1 element"]},{},[],-42,true,false,null,{"integer":1234567890,"real":-9876.54321,"e":1.23456789e-13,"E":1.23456789e+34,"":2.345678901e+76,"zero":0,"one":1,"space":" ","quote":"\"","backslash":"\\","controls":"\b\f\n\r\t","slash":"/ & /","alpha":"abcdefghijklmnopqrstuvwyz","ALPHA":"ABCDEFGHIJKLMNOPQRSTUVWYZ","digit":"0123456789","0123456789":"digit","special":"`1~!@#$%^&*()_+-={':[,]}|;.</>?","hex":"\u0123\u4567\u89AB\uCDEF\uABCD\uEF4A","true":true,"false":false,"null":null,"array":[],"object":{},"address":"50 St. James Street","url":"http://www.JSON.org/","comment":"// /* <!-- --","# -- --> */":" "," s p a c e d ":[1,2,3,4,5,6,7],"compact":[1,2,3,4,5,6,7],"jsontext":"{\"object with 1 member\":[\"array with 1 element\"]}","quotes":"&#34; \" %22 0x22 034 &#x22;","/\\\"\uCAFE\uBABE\uAB98\uFCDE\uBCDA\uEF4A\b\f\n\r\t`1~!@#$%^&*()_+-=[]{}|;:',./<>?":"A key can be any string"},0.5,98.6,99.44,1066,10,1,0.1,1,2,2,"rosebud"])json");

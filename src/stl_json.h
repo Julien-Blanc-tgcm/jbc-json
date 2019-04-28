@@ -19,6 +19,7 @@ template<typename T> using stdvector=std::vector<T>;
 struct stl_types
 {
     using string_type = std::string;
+    using string_view = std::string_view;
     using char_type = std::string::value_type;
     using buffer_type = std::vector<char>;
     using array_type = std::vector<basic_item<stl_types> >;

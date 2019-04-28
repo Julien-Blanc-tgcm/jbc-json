@@ -341,6 +341,13 @@ public:
     {
         return std::visit(v, data_);
     }
+
+    /**
+     * @brief string_value gives access to a non const reference to the value held in the item.
+     * In general, it should not be needed
+     * @return
+     */
+    typename traits::string_type& string_value();
 };
 
 
@@ -592,6 +599,13 @@ void basic_item<traits>::set_string_value(typename traits::string_type && value)
 
 template<typename traits>
 typename traits::string_type const& basic_item<traits>::string_value() const
+{
+    REQUIRE(type() == ItemType::String, "Must be a string");
+    return std::get<typename traits::string_type>(data_);
+}
+
+template<typename traits>
+typename traits::string_type & basic_item<traits>::string_value()
 {
     REQUIRE(type() == ItemType::String, "Must be a string");
     return std::get<typename traits::string_type>(data_);

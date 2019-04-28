@@ -123,43 +123,69 @@ struct ItemBuilderPrinter {
         return true;
     }
 
-    // STRING
-    bool string_handler(std::vector<char> const& value)
+    bool begin_string_handler()
     {
         if(!previous_is_key)
         {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        basic_locator loc;
-        while(!o::string<stl_types, decltype(value)>(value, loc, buf, offset))
-        {
+        while(!o::string_delimiter(buf, offset))
             flushbuffer();
-        }
         previous_is_key = false;
         return true;
     }
 
-    bool key_handler(std::vector<char> const& value)
+    // STRING
+    bool string_content_handler(std::string_view value)
+    {
+        basic_locator loc;
+        loc.position = 1;
+        while(!o::string_content<stl_types, decltype(value)>(value, loc, buf, offset))
+        {
+            flushbuffer();
+        }
+        return true;
+    }
+
+    bool end_string_handler()
+    {
+        while(!o::string_delimiter(buf, offset))
+            flushbuffer();
+        return true;
+    }
+
+    bool begin_key_handler()
     {
         if(!previous_is_key)
         {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
+        while(!o::string_delimiter(buf, offset))
+            flushbuffer();
+        return true;
+    }
+
+    bool key_handler(std::string_view value)
+    {
         basic_locator loc;
+        loc.position = 1;
         previous_is_key = true;
-        while(!o::string<stl_types>(value, loc, buf, offset))
+        while(!o::string_content<stl_types>(value, loc, buf, offset))
         {
             flushbuffer();
         }
+        return true;
+    }
+    bool end_key_handler()
+    {
         while(!o::object_keyvalueseparator(buf, offset))
         {
             flushbuffer();
         }
         return true;
     }
-
 };
 
 int main(int argc, char** argv)

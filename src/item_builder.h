@@ -18,7 +18,6 @@ template<template<class> class container, typename Item_>
 class item_builder
 {
 protected:
-  //  Parser<typename Item_::traits::string_type, typename Item_::traits::char_type>& parser_;
     Item_ item_;
     container<Item_*> current_item_;
     enum class State : std::uint8_t {
@@ -53,8 +52,19 @@ protected:
     bool null_handler();
 
     // STRING
-    bool string_handler(typename Item_::traits::buffer_type const& value);
-    bool key_handler(typename Item_::traits::buffer_type const& value);
+    bool begin_string_handler();
+    bool string_content_handler(typename Item_::traits::string_view value);
+    bool end_string_handler();
+
+    // KEY (same as string)
+    bool begin_key_handler();
+    bool key_handler(typename Item_::traits::string_view value);
+    bool end_key_handler();
+
+    // there is currently no way to rename an object key. So we need to store the whole key name
+    // before creating the object, unlike for string values. This should not be an issue in real
+    // life since key names should be short, but it still incurs a penalty...
+    typename Item_::traits::string_type lastString_;
 
 public:
     item_builder();
@@ -203,12 +213,12 @@ bool item_builder<container, Item_>::null_handler()
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::string_handler(typename Item_::traits::buffer_type const& value)
+bool item_builder<container, Item_>::begin_string_handler()
 {
     if(item_.type() == ItemType::Null)
     {
         using string = typename Item_::traits::string_type;
-        string s = Item_::traits::make_string(value.begin(), value.end());
+        string s;
         item_.morph_to_string(std::move(s));
         current_item_.push_back(&item_);
         return true;
@@ -217,25 +227,57 @@ bool item_builder<container, Item_>::string_handler(typename Item_::traits::buff
     {
         Item_* item = current_item_.back()->create_item(ItemType::String);
         using string = typename Item_::traits::string_type;
-        string s = Item_::traits::make_string(value.begin(), value.end());
+        string s;
         item->set_string_value(std::move(s));
+        current_item_.push_back(item);
         return true;
     }
     // else ItemType::Object:
     using string = typename Item_::traits::string_type;
-    string s = Item_::traits::make_string(value.begin(), value.end());
+    string s;
     current_item_.back()->morph_to_string(std::move(s));
+    return true;
+}
+
+template<template<class> class container,typename Item_>
+bool item_builder<container, Item_>::end_string_handler()
+{
     current_item_.pop_back();
     return true;
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::key_handler(typename Item_::traits::buffer_type const& value)
+bool item_builder<container, Item_>::string_content_handler(typename Item_::traits::string_view value)
 {
-    using string = typename Item_::traits::string_type;
-    string s = Item_::traits::make_string(value.begin(), value.end());
-    Item_* item = current_item_.back()->create_property(std::move(s));
+    using namespace std;
+    typename Item_::traits::string_type & s = current_item_.back()->string_value();
+    helper_functions<typename Item_::traits::buffer_type, typename Item_::traits::char_type>::
+            append(s, begin(value), end(value));
+    return true;
+}
+
+template<template<class> class container,typename Item_>
+bool item_builder<container, Item_>::begin_key_handler()
+{
+    lastString_.clear();
+    return true;
+}
+
+template<template<class> class container,typename Item_>
+bool item_builder<container, Item_>::key_handler(typename Item_::traits::string_view value)
+{
+    using namespace std;
+    helper_functions<typename Item_::traits::buffer_type, typename Item_::traits::char_type>::
+            append(lastString_, begin(value), end(value));
+    return true;
+}
+
+template<template<class> class container,typename Item_>
+bool item_builder<container, Item_>::end_key_handler()
+{
+    Item_* item = current_item_.back()->create_property(std::move(lastString_));
     current_item_.push_back(item);
+    lastString_.clear();
     return true;
 }
 

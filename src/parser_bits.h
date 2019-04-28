@@ -561,7 +561,10 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     {
         pop_state();
         bool res = false;
-        res = parser_callbacks::key_handler(lastValue);
+        res = parser_callbacks::begin_key_handler();
+        res = res && parser_callbacks::key_handler(
+                    helper_functions<buffer_type, char_type>::make_string_view(lastValue.data(), lastValue.size()));
+        res = res && parser_callbacks::end_key_handler();
         return res || make_error("string handling failure");
     }
     else if(token_helper<char_type_>::is_token_forbidden_in_string(char_))
@@ -573,7 +576,7 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
 
 template<template<class> class container,
 typename parser_callbacks,typename buffer_type_, typename char_type_>
-bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_string_(char_type_ char_)
+bool parser_bits<container, parser_callbacks, buffer_type_, char_type_>::consume_string_(char_type_ char_)
 {
     if(token_helper<char_type_>::is_token_backslash(char_))
     {
@@ -583,7 +586,10 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     {
         pop_state();
         bool res = false;
-        res = parser_callbacks::string_handler(lastValue);
+        res = parser_callbacks::begin_string_handler();
+        res = res && parser_callbacks::string_content_handler(
+                    helper_functions<buffer_type, char_type>::make_string_view(lastValue.data(), lastValue.size()));
+        res = res && parser_callbacks::end_string_handler();
         helper_functions<buffer_type, char_type>::truncate(lastValue);
         return res || make_error("string handling failure");
     }
@@ -615,31 +621,31 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_char_b(char_))
     {
         consumer_stack_.pop_back();
-        helper_functions<buffer_type_, char_type_>::append_code_point(lastValue, (int)'\b');
+        helper_functions<buffer_type_, char_type_>::append_code_point(lastValue, static_cast<int>('\b'));
         return true;
     }
     if(token_helper<char_type_>::is_token_char_f(char_))
     {
         consumer_stack_.pop_back();
-        helper_functions<buffer_type_, char_type_>::append_code_point(lastValue, (int)'\f');
+        helper_functions<buffer_type_, char_type_>::append_code_point(lastValue, static_cast<int>('\f'));
         return true;
     }
     if(token_helper<char_type_>::is_token_char_n(char_))
     {
         consumer_stack_.pop_back();
-        helper_functions<buffer_type, char_type>::append_code_point(lastValue, (int)'\n');
+        helper_functions<buffer_type, char_type>::append_code_point(lastValue, static_cast<int>('\n'));
         return true;
     }
     if(token_helper<char_type_>::is_token_char_r(char_))
     {
         consumer_stack_.pop_back();
-        helper_functions<buffer_type, char_type>::append_code_point(lastValue, (int)'\r');
+        helper_functions<buffer_type, char_type>::append_code_point(lastValue, static_cast<int>('\r'));
         return true;
     }
     if(token_helper<char_type_>::is_token_char_t(char_))
     {
         consumer_stack_.pop_back();
-        helper_functions<buffer_type, char_type>::append_code_point(lastValue, (int)'\t');
+        helper_functions<buffer_type, char_type>::append_code_point(lastValue, static_cast<int>('\t'));
         return true;
     }
     return make_error("Invalid token in StringEscape");

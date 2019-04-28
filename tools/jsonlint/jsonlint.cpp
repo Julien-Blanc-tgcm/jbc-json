@@ -42,9 +42,14 @@ struct FakeItemBuilder {
     static bool null_handler() { return true; }
 
     // STRING
-    static bool string_handler(std::vector<char> const& /*value*/) { return true; }
-    static bool key_handler(std::vector<char> const& /*value*/) { return true; }
+    static bool begin_string_handler() { return true;}
+    static bool string_content_handler(std::string_view /*value*/) { return true; }
+    static bool end_string_handler() { return true; }
 
+    // KEY
+    static bool begin_key_handler() { return true; }
+    static bool key_handler(std::string_view /*value*/) { return true; }
+    static bool end_key_handler() { return true; }
 };
 //	template<typename T> using stdvector=std::vector<T>;
 

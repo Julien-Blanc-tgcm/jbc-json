@@ -37,6 +37,13 @@ struct helper_functions
      * @brief This function has the same semantics as std::string.push_back()
      */
     static void append(buffer_type_& ref, char_type val) { ref.push_back(val); }
+
+    template<typename string_type, typename iterator>
+    static void append(string_type& ref, iterator beginit, iterator endit)
+    {
+        using namespace std;
+        ref.insert(end(ref), beginit, endit);
+    }
     /**
      * @deprecated
      */
@@ -74,6 +81,11 @@ struct helper_functions
         result.second = std::strtod(s.c_str(), &ret);
         result.first = errno == 0 && ret == (s.c_str() + s.size());
         return result;
+    }
+
+    static std::string_view make_string_view(char const * data, size_t size)
+    {
+        return std::string_view(data, size);
     }
 };
 

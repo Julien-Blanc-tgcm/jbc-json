@@ -18,7 +18,8 @@ namespace json
 
 struct qt_types
 {
-    typedef QString string_type;
+    using string_type = QString;
+    using string_view = QString;
     typedef QChar char_type;
     using buffer_type=QVector<QChar>;
     typedef QVector<basic_item<qt_types> > array_type;
@@ -72,6 +73,15 @@ struct helper_functions<QVector<QChar>, QChar>
         ref.push_back(QChar::fromLatin1(val));
     }
 
+    template<typename Iterator>
+    static void append(QString& ref, Iterator beginit, Iterator endit)
+    {
+        for(auto it = beginit; it != endit; ++it)
+        {
+            ref.push_back(*it);
+        }
+    }
+
     static void append_code_point(QVector<QChar>& ref, uint32_t val)
     {
         ref.append(QChar(val));
@@ -123,6 +133,10 @@ struct helper_functions<QVector<QChar>, QChar>
         QString s(ref.data(), ref.size());
         result.second = s.toDouble(&result.first);
         return result;
+    }
+    static QString make_string_view(QChar const* data, int size)
+    {
+        return QString::fromRawData(data, size);
     }
 };
 

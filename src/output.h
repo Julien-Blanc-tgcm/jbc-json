@@ -14,6 +14,7 @@
 #include <array>
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 
 namespace jbc
@@ -21,7 +22,7 @@ namespace jbc
 namespace json
 {
 
-struct locator
+struct basic_locator
 {
     /**
      * @brief position is the position inside the item
@@ -43,7 +44,15 @@ struct locator
      * means the nth item, and position_in_subitem will means the position where we stopped inside this item.
      * depth is not limited
      */
-    std::unique_ptr<locator> position_in_subitem;
+    std::unique_ptr<basic_locator> position_in_subitem;
+    /**
+     * @brief make_sub_locator creates a new child locator
+     * @return a new default constructed child locator.
+     */
+    std::unique_ptr<basic_locator> make_child_locator()
+    {
+        return std::make_unique<basic_locator>();
+    }
     void reset() {
         position = 0;
         sub_position = 0;
@@ -57,7 +66,7 @@ struct locator
 };
 
 
-template <typename char_type>
+template <typename char_type, typename locator = basic_locator>
 class output
 {
 private:
@@ -185,14 +194,14 @@ public:
  * @return true if written completely, false otherwise when calling visit
  * @remark when returning true, the locator is reset
  */
-template<typename buffer, typename item, typename char_type>
+template<typename buffer, typename item, typename char_type, typename locator = basic_locator>
 class output_visitor /*: public boost::static_visitor<bool>*/
 {
     buffer& buf_;
     int& offset_;
-    jbc::json::locator& loc_;
+    locator& loc_;
 public:
-    output_visitor(buffer& buf, int& offset, jbc::json::locator& loc) :
+    output_visitor(buffer& buf, int& offset, locator& loc) :
         buf_{buf},
         offset_{offset},
         loc_{loc}
@@ -202,41 +211,41 @@ public:
 
     bool operator()(double value)
     {
-        return output<char_type>::number(value, 10, loc_, buf_, offset_);
+        return output<char_type, locator>::number(value, 10, loc_, buf_, offset_);
     }
 
     bool operator()(typename item::traits::string_type const& value)
     {
-        return output<char_type>::template string<typename item::traits>(value, loc_, buf_, offset_);
+        return output<char_type, locator>::template string<typename item::traits>(value, loc_, buf_, offset_);
     }
 
     bool operator()(typename item::traits::array_type const& value)
     {
         auto beg = value.cbegin();
         auto end = value.cend();
-        return output<char_type>::template array<buffer, item>(beg, end, loc_, buf_, offset_);
+        return output<char_type, locator>::template array<buffer, item>(beg, end, loc_, buf_, offset_);
     }
 
     bool operator()(typename item::traits::object_type const& value)
     {
         auto beg = value.cbegin();
         auto end = value.cend();
-        return output<char_type>::template object<buffer, item>(beg, end, loc_, buf_, offset_);
+        return output<char_type, locator>::template object<buffer, item>(beg, end, loc_, buf_, offset_);
     }
 
     bool operator()(bool value)
     {
-        return output<char_type>::boolean(value, loc_, buf_, offset_);
+        return output<char_type, locator>::boolean(value, loc_, buf_, offset_);
     }
     bool operator()(std::monostate)
     {
-        return output<char_type>::null(loc_, buf_, offset_);
+        return output<char_type, locator>::null(loc_, buf_, offset_);
     }
 };
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename traits>
-bool output<char_type>::is_basic_printed(typename traits::char_type c)
+bool output<char_type, locator>::is_basic_printed(typename traits::char_type c)
 {
     unsigned int v = traits::char_value(c);
     if(c < 0x20) // non printable, includes \t, \n, \r, \f, \b
@@ -250,9 +259,9 @@ bool output<char_type>::is_basic_printed(typename traits::char_type c)
     return true;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename string_type>
-void output<char_type>::append_single_codepoint(string_type& str, std::uint32_t codepoint)
+void output<char_type, locator>::append_single_codepoint(string_type& str, std::uint32_t codepoint)
 {
     helper_functions<string_type, char_type>::append(str, hexchar<char_type>(codepoint >> 12));
     helper_functions<string_type, char_type>::append(str, hexchar<char_type>((codepoint & 0xF00)>> 8));
@@ -260,9 +269,9 @@ void output<char_type>::append_single_codepoint(string_type& str, std::uint32_t 
     helper_functions<string_type, char_type>::append(str, hexchar<char_type>(codepoint & 0xF));
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::number(double number, int precision, locator& loc, buffer& buf, int& offset)
+bool output<char_type, locator>::number(double number, int precision, locator& loc, buffer& buf, int& offset)
 {
     REQUIRE(precision < 40, "Precision cannot be too big");
     std::array<char, 50> chars;
@@ -287,9 +296,9 @@ bool output<char_type>::number(double number, int precision, locator& loc, buffe
     return true;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::boolean(bool value, locator& loc, buffer& buf, int& offset)
+bool output<char_type, locator>::boolean(bool value, locator& loc, buffer& buf, int& offset)
 {
     char const* val = value ? "true":"false";
     size_t data_size = value ? 4 : 5;
@@ -310,9 +319,9 @@ bool output<char_type>::boolean(bool value, locator& loc, buffer& buf, int& offs
     return true;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::null(locator& loc, buffer& buf, int& offset)
+bool output<char_type, locator>::null(locator& loc, buffer& buf, int& offset)
 {
     char const* val = "null";
     size_t data_size = 4;
@@ -333,9 +342,9 @@ bool output<char_type>::null(locator& loc, buffer& buf, int& offset)
     return true;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::string_delimiter(buffer& buf, int& offset)
+bool output<char_type, locator>::string_delimiter(buffer& buf, int& offset)
 {
     if(buf.size() - offset > 0)
     {
@@ -346,9 +355,9 @@ bool output<char_type>::string_delimiter(buffer& buf, int& offset)
     return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename traits, typename string_type, typename buffer_type>
-bool output<char_type>::string_content(string_type const& value, locator& loc, buffer_type& buf, int& offset)
+bool output<char_type, locator>::string_content(string_type const& value, locator& loc, buffer_type& buf, int& offset)
 {
     REQUIRE(loc.position > 0, "loc.position must be 1 or more, 0 is reserved for \" character");
     int i = 0;
@@ -428,9 +437,9 @@ bool output<char_type>::string_content(string_type const& value, locator& loc, b
     }
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename traits, typename string_type, typename buffer_type>
-bool output<char_type>::string(string_type const& value, locator& loc, buffer_type& buf, int& offset)
+bool output<char_type, locator>::string(string_type const& value, locator& loc, buffer_type& buf, int& offset)
 {
     int current = loc.position;
     if(current == 0) // nothing written
@@ -460,24 +469,24 @@ bool output<char_type>::string(string_type const& value, locator& loc, buffer_ty
     return false;
 }
 
-inline bool isStartOfTwoBytesCodePoint(unsigned int val)
+inline bool is_start_of_two_bytes_codepoint(unsigned int val)
 {
     return (val & 0xE0u) == 0xC0u; // 2 bytes unicode code point
 }
 
-inline bool isStartOfThreeBytesCodePoint(unsigned int val)
+inline bool is_start_of_three_bytes_codepoint(unsigned int val)
 {
     return (val & 0xF0) == 0xE0;
 }
 
-inline bool isStartOfFourBytesCodePoint(unsigned int val)
+inline bool is_start_of_four_bytes_codepoint(unsigned int val)
 {
     return (val & 0xF8) == 0xF0;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename traits, typename string_type, typename buffer>
-int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locator& loc)
+int output<char_type, locator>::char_to_tmp(string_type const& value, buffer& buf, locator& loc)
 {
     REQUIRE(buf.size() >= 12, "Buffer must be big enough to hold the representation of a unicode char > U+10000")
     if constexpr(traits::is_utf8)
@@ -539,17 +548,17 @@ int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locato
                         helper_functions<typename traits::string_type, char_type>::append(str, char_type{'0'});
                     helper_functions<typename traits::string_type, char_type>::append(str, hexchar<char_type>(v));
                 }
-                else if(isStartOfTwoBytesCodePoint(v)) // 2 bytes unicode code point
+                else if(is_start_of_two_bytes_codepoint(v)) // 2 bytes unicode code point
                 {
                     loc.codepointByte1 = static_cast<std::uint8_t>(v);
                     return 0;
                 }
-                else if(isStartOfThreeBytesCodePoint(v)) // 3 bytes unicode code point
+                else if(is_start_of_three_bytes_codepoint(v)) // 3 bytes unicode code point
                 {
                     loc.codepointByte1 = static_cast<std::uint8_t>(v);
                     return 0;
                 }
-                else if(isStartOfFourBytesCodePoint(v)) // 4 bytes unicode code point
+                else if(is_start_of_four_bytes_codepoint(v)) // 4 bytes unicode code point
                 {
                     loc.codepointByte1 = static_cast<std::uint8_t>(v);
                     return 0;
@@ -562,7 +571,7 @@ int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locato
             std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
             return str.size() - loc.sub_position;
         }
-        else if(isStartOfTwoBytesCodePoint(loc.codepointByte1))
+        else if(is_start_of_two_bytes_codepoint(loc.codepointByte1))
         {
             unsigned int codepoint = (loc.codepointByte1 - 0xC0u) << 6u;
             typename traits::string_type str;
@@ -574,7 +583,7 @@ int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locato
             std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
             return str.size() - loc.sub_position;
         }
-        else if(isStartOfThreeBytesCodePoint(loc.codepointByte1))
+        else if(is_start_of_three_bytes_codepoint(loc.codepointByte1))
         {
             if(loc.codepointByte2 == 0)
             {
@@ -629,9 +638,9 @@ int output<char_type>::char_to_tmp(string_type const& value, buffer& buf, locato
     }
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::object_start(buffer& buf, int& offset)
+bool output<char_type, locator>::object_start(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -643,9 +652,9 @@ bool output<char_type>::object_start(buffer& buf, int& offset)
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::object_keyvalueseparator(buffer& buf, int& offset)
+bool output<char_type, locator>::object_keyvalueseparator(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -657,9 +666,9 @@ bool output<char_type>::object_keyvalueseparator(buffer& buf, int& offset)
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::object_separator(buffer& buf, int& offset)
+bool output<char_type, locator>::object_separator(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -672,9 +681,9 @@ bool output<char_type>::object_separator(buffer& buf, int& offset)
 }
 
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::object_end(buffer& buf, int& offset)
+bool output<char_type, locator>::object_end(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -686,9 +695,9 @@ bool output<char_type>::object_end(buffer& buf, int& offset)
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer, typename item>
-bool output<char_type>::object(
+bool output<char_type, locator>::object(
         typename item::traits::object_const_iterator begin,
         typename item::traits::object_const_iterator end,
         locator& loc, buffer& buf, int& offset)
@@ -735,7 +744,7 @@ bool output<char_type>::object(
             {
                 locator subitem_location_empty;
                 locator& subitem_location = loc.position_in_subitem != nullptr?*loc.position_in_subitem:subitem_location_empty;
-                output_visitor<buffer, item, char_type> v{buf, offset, subitem_location};
+                output_visitor<buffer, item, char_type, locator> v{buf, offset, subitem_location};
                 res = it->second.apply_visitor(v);
                 if(!res)
                 {
@@ -776,9 +785,9 @@ bool output<char_type>::object(
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::array_start(buffer& buf, int& offset)
+bool output<char_type, locator>::array_start(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -790,9 +799,9 @@ bool output<char_type>::array_start(buffer& buf, int& offset)
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::array_separator(buffer& buf, int& offset)
+bool output<char_type, locator>::array_separator(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -804,9 +813,9 @@ bool output<char_type>::array_separator(buffer& buf, int& offset)
         return false;
 }
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer>
-bool output<char_type>::array_end(buffer& buf, int& offset)
+bool output<char_type, locator>::array_end(buffer& buf, int& offset)
 {
     if(offset < static_cast<long>(buf.size()))
     {
@@ -819,9 +828,9 @@ bool output<char_type>::array_end(buffer& buf, int& offset)
 }
 
 
-template<typename char_type>
+template<typename char_type, typename locator>
 template<typename buffer, typename item>
-bool output<char_type>::array(
+bool output<char_type, locator>::array(
         typename item::traits::array_const_iterator begin,
         typename item::traits::array_const_iterator end,
         locator& loc, buffer& buf, int& offset)
@@ -845,7 +854,7 @@ bool output<char_type>::array(
             {
                 locator subitem_location_empty;
                 locator& subitem_location = loc.position_in_subitem != nullptr?*loc.position_in_subitem:subitem_location_empty;
-                output_visitor<buffer, item, char_type> v{buf, offset, subitem_location};
+                output_visitor<buffer, item, char_type, locator> v{buf, offset, subitem_location};
                 res = it->apply_visitor(v);
                 if(!res)
                 {
@@ -888,13 +897,13 @@ bool output<char_type>::array(
         return false;
 }
 
-template<typename char_type, typename item>
+template<typename char_type, typename item, typename locator = basic_locator>
 bool output_json(std::ostream& stream, item const& the_item)
 {
     std::array<char_type, 32768> buf;
-    jbc::json::locator loc;
+    locator loc;
     int offset = 0;
-    output_visitor<decltype(buf), item, char_type> output{buf, offset, loc};
+    output_visitor<decltype(buf), item, char_type, locator> output{buf, offset, loc};
     bool res = false;
     while(!res && stream.good())
     {

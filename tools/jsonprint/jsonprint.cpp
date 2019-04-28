@@ -15,7 +15,7 @@ using namespace json;
 
 struct ItemBuilderPrinter {
     std::array<char, 65536> buf;
-    using o=output<char>;
+    using o=output<char, basic_locator>;
     int offset = 0;
     bool previous_is_key = true;
 
@@ -79,7 +79,7 @@ struct ItemBuilderPrinter {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        locator loc;
+        basic_locator loc;
         while(!o::boolean(value, loc, buf, offset))
         {
             flushbuffer();
@@ -96,7 +96,7 @@ struct ItemBuilderPrinter {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        locator loc;
+        basic_locator loc;
         while(!o::number(value, 10, loc, buf, offset))
         {
             flushbuffer();
@@ -114,7 +114,7 @@ struct ItemBuilderPrinter {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        locator loc;
+        basic_locator loc;
         while(!o::null(loc, buf, offset))
         {
             flushbuffer();
@@ -131,7 +131,7 @@ struct ItemBuilderPrinter {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        locator loc;
+        basic_locator loc;
         while(!o::string<stl_types, decltype(value)>(value, loc, buf, offset))
         {
             flushbuffer();
@@ -147,7 +147,7 @@ struct ItemBuilderPrinter {
             while(!o::array_separator(buf, offset))
                 flushbuffer();
         }
-        locator loc;
+        basic_locator loc;
         previous_is_key = true;
         while(!o::string<stl_types>(value, loc, buf, offset))
         {
@@ -233,7 +233,7 @@ int main(int argc, char** argv)
     if(res)
     {
         //stl_printer::print(i, false, std::cout);
-        output_json<char>(std::cout, i);
+        output_json<char, stl_item, basic_locator>(std::cout, i);
         return 0;
     }
     else

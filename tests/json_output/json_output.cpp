@@ -12,12 +12,14 @@
 
 namespace utf = boost::unit_test;
 
+using json_output = jbc::json::output<char, jbc::json::basic_locator>;
+
 BOOST_AUTO_TEST_CASE(numberoutput, *utf::description("Output a single number"))
 {
     double d = 3.38778;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 60> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 7);
@@ -28,9 +30,9 @@ BOOST_AUTO_TEST_CASE(numberoutput, *utf::description("Output a single number"))
 BOOST_AUTO_TEST_CASE(numberoutput2, *utf::description("Output a single number at specific position"))
 {
     double d = 3.38778;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 60> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 10;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 17);
@@ -41,9 +43,9 @@ BOOST_AUTO_TEST_CASE(numberoutput2, *utf::description("Output a single number at
 BOOST_AUTO_TEST_CASE(numberoutput3, *utf::description("Output a number that does not fit"))
 {
     double d = 3.38778;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 5> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 1;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 5);
@@ -55,9 +57,9 @@ BOOST_AUTO_TEST_CASE(numberoutput3, *utf::description("Output a number that does
 BOOST_AUTO_TEST_CASE(numberoutput4, *utf::description("Output second part of a number that does not fit"))
 {
     double d = 3.38778;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 5> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 4;
     int offset = 1;
     bool res = o.number(d, 6, loc, buf, offset);
@@ -70,9 +72,9 @@ BOOST_AUTO_TEST_CASE(numberoutput4, *utf::description("Output second part of a n
 BOOST_AUTO_TEST_CASE(booleanoutput, *utf::description("Output a single boolean (true)"))
 {
     bool v = true;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 6> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 4);
@@ -84,9 +86,9 @@ BOOST_AUTO_TEST_CASE(booleanoutput, *utf::description("Output a single boolean (
 BOOST_AUTO_TEST_CASE(booleanoutput2, *utf::description("Output a single boolean (false)"))
 {
     bool v = false;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 6> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 5);
@@ -98,9 +100,9 @@ BOOST_AUTO_TEST_CASE(booleanoutput2, *utf::description("Output a single boolean 
 BOOST_AUTO_TEST_CASE(booleanoutput3, *utf::description("Output a partial boolean"))
 {
     bool v = true;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 2> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 2);
@@ -112,9 +114,9 @@ BOOST_AUTO_TEST_CASE(booleanoutput3, *utf::description("Output a partial boolean
 BOOST_AUTO_TEST_CASE(booleanoutput4, *utf::description("Output a partial boolean"))
 {
     bool v = false;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 2> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
@@ -127,9 +129,9 @@ BOOST_AUTO_TEST_CASE(booleanoutput4, *utf::description("Output a partial boolean
 BOOST_AUTO_TEST_CASE(booleanoutput5, *utf::description("Output the end of a boolean, with offset"))
 {
     bool v = false;
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     int offset = 3;
     bool res = o.boolean(v, loc, buf, offset);
@@ -141,9 +143,9 @@ BOOST_AUTO_TEST_CASE(booleanoutput5, *utf::description("Output the end of a bool
 
 BOOST_AUTO_TEST_CASE(nulloutput, *utf::description("Output a null value"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.null(loc, buf, offset);
     BOOST_TEST(offset == 4);
@@ -154,9 +156,9 @@ BOOST_AUTO_TEST_CASE(nulloutput, *utf::description("Output a null value"))
 
 BOOST_AUTO_TEST_CASE(nulloutput2, *utf::description("Output a partial null value"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 3> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.null(loc, buf, offset);
     BOOST_TEST(offset == 3);
@@ -167,9 +169,9 @@ BOOST_AUTO_TEST_CASE(nulloutput2, *utf::description("Output a partial null value
 
 BOOST_AUTO_TEST_CASE(nulloutput3, *utf::description("Output end of a partial null value, with offset"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 2;
     int offset = 3;
     bool res = o.null(loc, buf, offset);
@@ -181,10 +183,10 @@ BOOST_AUTO_TEST_CASE(nulloutput3, *utf::description("Output end of a partial nul
 
 BOOST_AUTO_TEST_CASE(stringoutput1, *utf::description("Complete output of a string with no escaped characters"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 50> buf;
     std::string v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -196,10 +198,10 @@ BOOST_AUTO_TEST_CASE(stringoutput1, *utf::description("Complete output of a stri
 
 BOOST_AUTO_TEST_CASE(stringoutput2, *utf::description("Incomplete output of a string with no escaped characters"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 10> buf;
     std::string v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -211,10 +213,10 @@ BOOST_AUTO_TEST_CASE(stringoutput2, *utf::description("Incomplete output of a st
 
 BOOST_AUTO_TEST_CASE(stringoutput3, *utf::description("End of output of a string with no escaped characters, with offset"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 10> buf;
     std::string v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 10;
     int offset = 2;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -226,10 +228,10 @@ BOOST_AUTO_TEST_CASE(stringoutput3, *utf::description("End of output of a string
 
 BOOST_AUTO_TEST_CASE(stringoutput4, *utf::description("Output of a complete string with special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 50> buf;
     std::string v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -241,10 +243,10 @@ BOOST_AUTO_TEST_CASE(stringoutput4, *utf::description("Output of a complete stri
 
 BOOST_AUTO_TEST_CASE(stringoutput5, *utf::description("Output of a incomplete string with special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 15> buf;
     std::string v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -256,10 +258,10 @@ BOOST_AUTO_TEST_CASE(stringoutput5, *utf::description("Output of a incomplete st
 
 BOOST_AUTO_TEST_CASE(stringoutput6, *utf::description("Output of the end of an incomplete string with special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 15> buf;
     std::string v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 14;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -271,10 +273,10 @@ BOOST_AUTO_TEST_CASE(stringoutput6, *utf::description("Output of the end of an i
 
 BOOST_AUTO_TEST_CASE(stringoutput7, *utf::description("Output of a string, cut in the middle of a special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 12> buf;
     std::string v{"A sample \x12 string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -287,10 +289,10 @@ BOOST_AUTO_TEST_CASE(stringoutput7, *utf::description("Output of a string, cut i
 
 BOOST_AUTO_TEST_CASE(stringoutput8, *utf::description("Output of the end of a string, cut in the middle of a special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 20> buf;
     std::string v{"A sample \x12 string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 10;
     loc.sub_position = 2;
     int offset = 3;
@@ -304,10 +306,10 @@ BOOST_AUTO_TEST_CASE(stringoutput8, *utf::description("Output of the end of a st
 
 BOOST_AUTO_TEST_CASE(stringoutput9, *utf::description("Output of a small string portion with special character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 4> buf;
     std::string v{"\x12"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     loc.sub_position = 2;
     int offset = 2;
@@ -321,10 +323,10 @@ BOOST_AUTO_TEST_CASE(stringoutput9, *utf::description("Output of a small string 
 
 BOOST_AUTO_TEST_CASE(stringoutput10, *utf::description("Output of a string, character by character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 1> buf;
     std::string v{"st\x12\\"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     std::string output;
@@ -341,10 +343,10 @@ BOOST_AUTO_TEST_CASE(stringoutput10, *utf::description("Output of a string, char
 
 BOOST_AUTO_TEST_CASE(stringoutput11, *utf::description("Output of a string with large hex characters"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 30> buf;
     std::string v{"st\uCAFEau"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     std::string output;
@@ -357,7 +359,7 @@ BOOST_AUTO_TEST_CASE(stringoutput11, *utf::description("Output of a string with 
 
 BOOST_AUTO_TEST_CASE(stringoutput12, *utf::description("Output of a string with split inside a multibyte utf8 character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 30> buf;
     std::string v{"st\uCAFEau"};
     auto it = begin(v);
@@ -365,7 +367,7 @@ BOOST_AUTO_TEST_CASE(stringoutput12, *utf::description("Output of a string with 
     std::advance(next, 4);
     std::string v1{it, next};
     std::string v2{next, end(v)};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     std::string output;
@@ -387,10 +389,10 @@ BOOST_AUTO_TEST_CASE(stringoutput12, *utf::description("Output of a string with 
 
 BOOST_AUTO_TEST_CASE(stringoutput13, *utf::description("Output of a 4bytes utf8 character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 50> buf;
     std::string v{u8"st💫au"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     res = o.string<jbc::json::stl_types>(v, loc, buf, offset);
@@ -402,14 +404,14 @@ BOOST_AUTO_TEST_CASE(stringoutput13, *utf::description("Output of a 4bytes utf8 
 
 BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a large enough buffer"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 500> buf;
     jbc::json::stl_item obj(jbc::json::ItemType::Object);
     obj.create_property("property1", jbc::json::ItemType::String)->set_string_value("toto");
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = o.object<decltype(buf), jbc::json::stl_item>(obj.begin_object(), obj.end_object(), loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res == true);
@@ -418,7 +420,7 @@ BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a 
 
 BOOST_AUTO_TEST_CASE(objectoutput2, *utf::description("Output of an object, in a very small buffer"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 5> buf;
     std::string str;
     jbc::json::stl_item obj(jbc::json::ItemType::Object);
@@ -426,7 +428,7 @@ BOOST_AUTO_TEST_CASE(objectoutput2, *utf::description("Output of an object, in a
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -441,7 +443,7 @@ BOOST_AUTO_TEST_CASE(objectoutput2, *utf::description("Output of an object, in a
 
 BOOST_AUTO_TEST_CASE(objectoutput3, *utf::description("Output of an object, character by character"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 1> buf;
     std::string str;
     jbc::json::stl_item obj(jbc::json::ItemType::Object);
@@ -449,7 +451,7 @@ BOOST_AUTO_TEST_CASE(objectoutput3, *utf::description("Output of an object, char
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -465,7 +467,7 @@ BOOST_AUTO_TEST_CASE(objectoutput3, *utf::description("Output of an object, char
 
 BOOST_AUTO_TEST_CASE(arrayoutput, *utf::description("Output of an array, in a large enough buffer"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 500> buf;
     jbc::json::stl_item arr(jbc::json::ItemType::Array);
     arr.create_item(jbc::json::ItemType::String)->set_string_value("sample value");
@@ -473,7 +475,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput, *utf::description("Output of an array, in a la
     arr.create_item(jbc::json::ItemType::Null);
     arr.create_item(jbc::json::ItemType::Array);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = o.array<decltype(buf), jbc::json::stl_item>(arr.begin_array(), arr.end_array(), loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res == true);
@@ -482,7 +484,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput, *utf::description("Output of an array, in a la
 
 BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a very small buffer"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 5> buf;
     jbc::json::stl_item arr(jbc::json::ItemType::Array);
     std::string str;
@@ -494,7 +496,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a v
     sub->create_item(jbc::json::ItemType::Null);
     sub->create_item(jbc::json::ItemType::String);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -509,7 +511,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a v
 
 BOOST_AUTO_TEST_CASE(arrayoutput3, *utf::description("Output of an array, char by char"))
 {
-    jbc::json::output<char> o;
+    json_output o;
     std::array<char, 1> buf;
     jbc::json::stl_item arr(jbc::json::ItemType::Array);
     std::string str;
@@ -521,7 +523,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput3, *utf::description("Output of an array, char b
     sub->create_item(jbc::json::ItemType::Null);
     sub->create_item(jbc::json::ItemType::String);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -602,13 +604,13 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
     {
         std::string output;
         std::array<char, 50> buf;
-        jbc::json::locator loc;
-//        jbc::json::output<char> o;
+        jbc::json::basic_locator loc;
+//        json_output<char> o;
         res = false;
         while(!res)
         {
             int offset = 0;
-            jbc::json::output_visitor<decltype (buf), jbc::json::stl_item, char>
+            jbc::json::output_visitor<decltype (buf), jbc::json::stl_item, char, jbc::json::basic_locator>
                     v{buf, offset, loc};
             res = i.apply_visitor(v);
 

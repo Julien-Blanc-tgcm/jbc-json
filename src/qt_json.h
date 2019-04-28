@@ -49,7 +49,7 @@ struct qt_types
         return c.unicode();
     }
     template<typename buffer>
-    static int char_to_tmp(string_type const& value, buffer& buf, locator& loc);
+    static int char_to_tmp(string_type const& value, buffer& buf, basic_locator& loc);
     static bool is_start_of_two_words_code_point(int value);
     static constexpr const bool is_utf8 = false;
     static void copy_basic_data(QChar const* first, QChar const* last, char* dest);
@@ -173,7 +173,7 @@ void qt_types::copy_basic_data(const QChar *first, const QChar *last, QChar *des
 }
 
 template<typename buffer>
-int qt_types::char_to_tmp(const string_type &value, buffer &buf, locator &loc)
+int qt_types::char_to_tmp(const string_type &value, buffer &buf, basic_locator &loc)
 {
     char_type c = value[loc.position - 1];
     if(loc.codepointByte1 == 0) // no previous code point
@@ -242,7 +242,7 @@ int qt_types::char_to_tmp(const string_type &value, buffer &buf, locator &loc)
             {
                 helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
                 helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
-                output<typename buffer::value_type>::append_single_codepoint(str, v);
+                output<typename buffer::value_type, basic_locator>::append_single_codepoint(str, v);
             }
         }
         std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
@@ -255,10 +255,10 @@ int qt_types::char_to_tmp(const string_type &value, buffer &buf, locator &loc)
         QVector<typename buffer::value_type> str;
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
-        output<typename buffer::value_type>::append_single_codepoint(str, high);
+        output<typename buffer::value_type, basic_locator>::append_single_codepoint(str, high);
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'\\'});
         helper_functions<decltype(str), typename buffer::value_type>::append(str, typename buffer::value_type{'u'});
-        output<typename buffer::value_type>::append_single_codepoint(str, v);
+        output<typename buffer::value_type, basic_locator>::append_single_codepoint(str, v);
         std::copy(str.data() + loc.sub_position, str.data() + str.size(), buf.data());
         return str.size() - loc.sub_position;
     }

@@ -16,9 +16,9 @@ namespace utf = boost::unit_test;
 BOOST_AUTO_TEST_CASE(numberoutput, *utf::description("Output a single number"))
 {
     double d = 3.38778;
-    jbc::json::output<QChar> o;
+    jbc::json::output<QChar, jbc::json::basic_locator> o;
     std::array<QChar, 60> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 7);
@@ -31,9 +31,9 @@ BOOST_AUTO_TEST_CASE(numberoutput, *utf::description("Output a single number"))
 BOOST_AUTO_TEST_CASE(numberoutput2, *utf::description("Output a single number at specific position"))
 {
     double d = 3.38778;
-    jbc::json::output<QChar> o;
+    jbc::json::output<QChar, jbc::json::basic_locator> o;
     std::array<QChar, 60> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 10;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 17);
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(numberoutput3, *utf::description("Output a number that does
     double d = 3.38778;
     jbc::json::output<QChar> o;
     std::array<QChar, 5> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 1;
     bool res = o.number(d, 6, loc, buf, offset);
     BOOST_TEST(offset == 5);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(numberoutput4, *utf::description("Output second part of a n
     double d = 3.38778;
     jbc::json::output<QChar> o;
     std::array<QChar, 5> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 4;
     int offset = 1;
     bool res = o.number(d, 6, loc, buf, offset);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(booleanoutput, *utf::description("Output a single boolean (
     bool v = true;
     jbc::json::output<QChar> o;
     std::array<QChar, 6> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 4);
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(booleanoutput2, *utf::description("Output a single boolean 
     bool v = false;
     jbc::json::output<QChar> o;
     std::array<QChar, 6> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 5);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(booleanoutput3, *utf::description("Output a partial boolean
     bool v = true;
     jbc::json::output<QChar> o;
     std::array<QChar, 2> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
     BOOST_TEST(offset == 2);
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(booleanoutput4, *utf::description("Output a partial boolean
     bool v = false;
     jbc::json::output<QChar> o;
     std::array<QChar, 2> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     int offset = 0;
     bool res = o.boolean(v, loc, buf, offset);
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(booleanoutput5, *utf::description("Output the end of a bool
     bool v = false;
     jbc::json::output<QChar> o;
     std::array<QChar, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     int offset = 3;
     bool res = o.boolean(v, loc, buf, offset);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(nulloutput, *utf::description("Output a null value"))
 {
     jbc::json::output<QChar> o;
     std::array<QChar, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.null(loc, buf, offset);
     BOOST_TEST(offset == 4);
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(nulloutput2, *utf::description("Output a partial null value
 {
     jbc::json::output<QChar> o;
     std::array<QChar, 3> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = o.null(loc, buf, offset);
     BOOST_TEST(offset == 3);
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(nulloutput3, *utf::description("Output end of a partial nul
 {
     jbc::json::output<QChar> o;
     std::array<QChar, 10> buf;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 2;
     int offset = 3;
     bool res = o.null(loc, buf, offset);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(stringoutput1, *utf::description("Complete output of a stri
     jbc::json::output<char> o;
     std::array<char, 50> buf;
     QString v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(stringoutput2, *utf::description("Incomplete output of a st
     jbc::json::output<QChar> o;
     std::array<QChar, 10> buf;
     QString v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(stringoutput3, *utf::description("End of output of a string
     jbc::json::output<char> o;
     std::array<char, 10> buf;
     QString v{"A sample string"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 10;
     int offset = 2;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(stringoutput4, *utf::description("Output of a complete stri
     jbc::json::output<char> o;
     std::array<char, 50> buf;
     QString v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(stringoutput5, *utf::description("Output of a incomplete st
     jbc::json::output<char> o;
     std::array<QChar, 15> buf;
     QString v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(stringoutput6, *utf::description("Output of the end of an i
     jbc::json::output<QChar> o;
     std::array<QChar, 15> buf;
     QString v{"A sample \"string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 14;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(stringoutput7, *utf::description("Output of a string, cut i
     jbc::json::output<QChar> o;
     std::array<QChar, 12> buf;
     QString v{"A sample \x12 string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 0;
     int offset = 0;
     bool res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(stringoutput8, *utf::description("Output of the end of a st
     jbc::json::output<QChar> o;
     std::array<QChar, 20> buf;
     QString v{"A sample \x12 string\""};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 10;
     loc.sub_position = 2;
     int offset = 3;
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(stringoutput9, *utf::description("Output of a small string 
     jbc::json::output<QChar> o;
     std::array<QChar, 4> buf;
     QString v = QString::fromUtf8("\x12");
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     loc.position = 1;
     loc.sub_position = 2;
     int offset = 2;
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(stringoutput10, *utf::description("Output of a string, char
     jbc::json::output<QChar> o;
     std::array<QChar, 1> buf;
     QString v{"st\x12\\"};
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     QString output;
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(stringoutput11, *utf::description("Output of a string with 
     jbc::json::output<QChar> o;
     std::array<QChar, 30> buf;
     QString v = QString::fromUtf8("st\uCAFEau");
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     QString output;
@@ -403,7 +403,7 @@ BOOST_AUTO_TEST_CASE(stringoutput13, *utf::description("Output of a 4bytes utf8 
     jbc::json::output<QChar> o;
     std::array<QChar, 50> buf;
     QString v = QString::fromUtf8(u8"st💫au");
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     int offset = 0;
     bool res = false;
     res = o.string<jbc::json::qt_types>(v, loc, buf, offset);
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(objectoutput1, *utf::description("Output of a object, in a 
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = o.object<decltype(buf), jbc::json::QJsonItem>(obj.begin_object(), obj.end_object(), loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res == true);
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(objectoutput2, *utf::description("Output of an object, in a
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(objectoutput3, *utf::description("Output of an object, char
     obj.create_property("property2", jbc::json::ItemType::String)->set_string_value("tutu");
     obj.create_property("property3", jbc::json::ItemType::String)->set_string_value("tata");
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput, *utf::description("Output of an array, in a la
     arr.create_item(jbc::json::ItemType::Null);
     arr.create_item(jbc::json::ItemType::Array);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = o.array<decltype(buf), jbc::json::QJsonItem>(arr.begin_array(), arr.end_array(), loc, buf, offset);
     buf[offset] = 0;
     BOOST_TEST(res == true);
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput2, *utf::description("Output of an array, in a v
     sub->create_item(jbc::json::ItemType::Null);
     sub->create_item(jbc::json::ItemType::String);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -536,7 +536,7 @@ BOOST_AUTO_TEST_CASE(arrayoutput3, *utf::description("Output of an array, char b
     sub->create_item(jbc::json::ItemType::Null);
     sub->create_item(jbc::json::ItemType::String);
     int offset = 0;
-    jbc::json::locator loc;
+    jbc::json::basic_locator loc;
     bool res = false;
     while(!res)
     {
@@ -616,7 +616,7 @@ BOOST_AUTO_TEST_CASE(complexdocument, *utf::description("Output of a complex doc
     {
         QString output;
         std::array<char, 50> buf;
-        jbc::json::locator loc;
+        jbc::json::basic_locator loc;
         res = false;
         while(!res)
         {

@@ -11,6 +11,15 @@
 
 namespace utf = boost::unit_test;
 
+BOOST_AUTO_TEST_CASE(pass0, *utf::description("Simple document"))
+{
+    std::string str = "[{\"toto\":\"tutu\"},{\"toto\":\"tutu\"}]";
+    std::istringstream s(str);
+    jbc::json::stl_item i;
+    bool res = parse_from_stream(s,i);
+    BOOST_TEST(res);
+}
+
 BOOST_AUTO_TEST_CASE(pass1, *utf::description("Sample json document"))
 {
     std::string str = R"json([

@@ -58,7 +58,7 @@ protected:
 
     // KEY (same as string)
     bool begin_key_handler();
-    bool key_handler(typename Item_::traits::string_view value);
+    bool key_content_handler(typename Item_::traits::string_view value);
     bool end_key_handler();
 
     // there is currently no way to rename an object key. So we need to store the whole key name
@@ -264,7 +264,7 @@ bool item_builder<container, Item_>::begin_key_handler()
 }
 
 template<template<class> class container,typename Item_>
-bool item_builder<container, Item_>::key_handler(typename Item_::traits::string_view value)
+bool item_builder<container, Item_>::key_content_handler(typename Item_::traits::string_view value)
 {
     using namespace std;
     helper_functions<typename Item_::traits::buffer_type, typename Item_::traits::char_type>::

@@ -48,7 +48,7 @@ struct FakeItemBuilder {
 
     // KEY
     static bool begin_key_handler() { return true; }
-    static bool key_handler(std::string_view /*value*/) { return true; }
+    static bool key_content_handler(std::string_view /*value*/) { return true; }
     static bool end_key_handler() { return true; }
 };
 //	template<typename T> using stdvector=std::vector<T>;
@@ -66,7 +66,7 @@ void lint(std::istream& i, std::string const& name)
         int count = i.gcount();
         for(int i = 0; i < count && good; ++i)
         {
-            good = parser.consume(buf[i]);
+            good = parser.consume_(buf + i);
             if(buf[i] == '\n')
             {
                 currentLine += 1;
@@ -75,6 +75,7 @@ void lint(std::istream& i, std::string const& name)
             else
                 currentChar += 1;
         }
+        parser.consume_(nullptr);
     }
     if(i.eof())
         good = good && parser.end();
@@ -91,6 +92,9 @@ void lint(std::istream& i, std::string const& name)
 
 int main(int argc, char** argv)
 {
+    static_assert(sizeof(std::string) == 32,"Size shall be ok");
+
+    static_assert(sizeof(stl_item) <= 40,"Size shall be ok");
     if(argc != 2)
     {
         std::cerr << "usage : " << argv[0] << " <file>" << std::endl;

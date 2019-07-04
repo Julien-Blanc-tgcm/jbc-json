@@ -87,7 +87,7 @@ private:
      * from the string, this will be reported in the return value by returning 0
      * @return the size of the data
      */
-    template<typename traits, typename string_type=typename traits::string_type, typename buffer=typename traits::buffer_type>
+    template<typename traits, typename string_type=typename traits::string_view, typename buffer=typename traits::buffer_type>
     static int char_to_tmp(string_type const& val, buffer& buf, locator& loc);
 
 public:
@@ -380,7 +380,7 @@ bool output<char_type, locator>::string_content(string_type const& value, locato
             loc.position = i + 1;
             // copy specific data
             std::array<char_type, 12> tmp; // 12 bytes may be needed for codepoints in the form \uXXXX\uXXXX
-            auto const size = char_to_tmp<traits>(value, tmp, loc);
+            auto const size = char_to_tmp<traits>(typename traits::string_view{value}, tmp, loc);
             if(size > 0 && (static_cast<int>(buf.size()) - offset >= size)) // something returned, and fits
             {
                 std::copy(tmp.data(), tmp.data() + size, buf.data() + offset);
@@ -634,7 +634,7 @@ int output<char_type, locator>::char_to_tmp(string_type const& value, buffer& bu
     }
     else
     {
-        return traits::char_to_tmp(value, buf, loc);
+        return traits::char_to_tmp(typename traits::string_view{value}, buf, loc);
     }
 }
 

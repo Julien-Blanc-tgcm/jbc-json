@@ -167,12 +167,11 @@ struct ItemBuilderPrinter {
         return true;
     }
 
-    bool key_handler(std::string_view value)
+    bool key_content_handler(std::string_view value)
     {
         basic_locator loc;
         loc.position = 1;
-        previous_is_key = true;
-        while(!o::string_content<stl_types>(value, loc, buf, offset))
+        while(!o::string_content<stl_types, decltype (value)>(value, loc, buf, offset))
         {
             flushbuffer();
         }
@@ -180,10 +179,15 @@ struct ItemBuilderPrinter {
     }
     bool end_key_handler()
     {
+        while(!o::string_delimiter(buf, offset))
+        {
+            flushbuffer();
+        }
         while(!o::object_keyvalueseparator(buf, offset))
         {
             flushbuffer();
         }
+        previous_is_key = true;
         return true;
     }
 };

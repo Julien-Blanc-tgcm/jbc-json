@@ -7,6 +7,8 @@ set (libjson_VERSION_MINOR 0)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
@@ -41,7 +43,9 @@ include_directories(src)
 
 enable_testing(TRUE)
 
-if(DEFINED COVERAGE AND (${COVERAGE}))
+set(COVERAGE Off CACHE BOOL "Build with coverage enable (gcov)" )
+
+if(COVERAGE)
     SET(CMAKE_COVERAGE_COMMAND FILEPATH /usr/bin/gcov)
     SET(CXX_FLAGS_COVERAGE  -pthread -g -O0 -Wall -W -Wunused-variable
         -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers
@@ -69,6 +73,8 @@ endif()
 
 add_executable(jsonprint tools/jsonprint/jsonprint.cpp ${LIB_HEADERS})
 add_executable(jsonlint tools/jsonlint/jsonlint.cpp ${LIB_HEADERS})
+
+set_target_properties(jsonprint PROPERTIES LINK_FLAGS -Wl,-Map=jsonprint.map)
 
 add_executable(json_conformance_test tests/json_conformance/json_conformance.cpp ${LIB_HEADERS})
 add_executable(json_output_test tests/json_output/json_output.cpp ${LIB_HEADERS})
@@ -101,6 +107,6 @@ endif()
 
 add_definitions(-DCONTRACT_POLICY=CONTRACTS_NO_CHECK)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -pedantic ")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

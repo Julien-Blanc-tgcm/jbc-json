@@ -57,7 +57,7 @@ class basic_item
     >;
 
     data_type data_;
-    bool complete_ = true;
+//    bool complete_ = true;
 
 public:
 
@@ -352,16 +352,16 @@ public:
 
 
 template<typename traits>
-basic_item<traits>::basic_item(bool async) noexcept :
-    data_{std::monostate{}},
-    complete_{!async}
+basic_item<traits>::basic_item(bool /*async*/) noexcept :
+    data_{std::monostate{}}
+//    complete_{!async}
 {
 }
 
 template<typename traits>
-basic_item<traits>::basic_item(ItemType type, bool async) noexcept :
-    data_{std::monostate{}},
-    complete_(!async)
+basic_item<traits>::basic_item(ItemType type, bool /*async*/) noexcept :
+    data_{std::monostate{}}
+//    complete_(!async)
 {
     morph_to(type);
 }
@@ -370,15 +370,15 @@ template<typename traits>
 basic_item<traits> basic_item<traits>::clone(basic_item<traits> const& other) noexcept
 {
     basic_item<traits> ret;
-    ret.complete_ = other.complete_;
+//    ret.complete_ = other.complete_;
     ret.data_ = other.data_;
     return ret;
 }
 
 template<typename traits>
 basic_item<traits>::basic_item(basic_item<traits> &&other) noexcept :
-    data_{std::monostate{}},
-    complete_(other.complete_)
+    data_{std::monostate{}}
+//    complete_(other.complete_)
 {
     data_ = std::move(other.data_);
     other.data_ = std::monostate{};
@@ -391,22 +391,22 @@ basic_item<traits> & basic_item<traits>::operator =(basic_item<traits> && other)
     {
         data_ = std::move(other.data_);
         other.data_ = std::monostate{};
-        complete_ = other.complete_;
+//        complete_ = other.complete_;
     }
     return *this;
 }
 
 template<typename traits>
-basic_item<traits>::basic_item(typename traits::string_type &&string_value) noexcept :
-    complete_{true}
+basic_item<traits>::basic_item(typename traits::string_type &&string_value) noexcept
+//    complete_{true}
 {
     data_ = std::move(string_value);
 }
 
 template<typename traits>
 basic_item<traits>::basic_item(typename traits::string_type const& stringValue) :
-    data_{stringValue},
-    complete_{true}
+    data_{stringValue}
+//    complete_{true}
 {
 }
 
@@ -454,7 +454,7 @@ bool basic_item<traits>::complete() const
             return true;
         case ItemType::Object:
         case ItemType::Array:
-            return complete_;
+            return true;
     }
     return false; // should not happen
 }
@@ -463,7 +463,7 @@ template<typename traits>
 void basic_item<traits>::end_current_object()
 {
     REQUIRE(type() == ItemType::Object || type() == ItemType::Array, "Item must be object or array");
-    complete_ = true;
+//    complete_ = true;
 }
 
 template<typename traits>

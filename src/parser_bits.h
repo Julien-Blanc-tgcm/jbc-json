@@ -622,7 +622,14 @@ bool parser_bits<container,parser_callbacks, buffer_type_, char_type_>::consume_
     if(token_helper<char_type_>::is_token_backslash(*char_))
     {
         inside_key_ = true;
+        bool res = true;
+	if(first_ != nullptr)
+	    res = parser_callbacks::key_content_handler(
+                        helper_functions<buffer_type, char_type>::make_string_view(
+                        first_, char_ - first_));
+        first_ = nullptr;
         consumer_stack_.push_back(&parser_bits::consume_stringescape_);
+        return res;
     }
     else if(token_helper<char_type_>::is_token_double_quote(*char_))
     {

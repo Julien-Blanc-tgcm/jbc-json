@@ -22,7 +22,8 @@ together to produce a fully featured JSON parser / producer :
  * parser : this template class is in charge of doing the actual parsing of
    the json data. Parsing is done from memory fed to the parser, so that it
    can come from any source. The parser has a sax-like API to allow retrieving
-   of the JSON data. 
+   of the JSON data. Parser is incremental : partial data can be fed to the
+   parser, which keeps the internal state.
  * output : this class is in charge of producing json data. It is designed to
    write into fixed size buffers, handling a virtual object offset when data
    does not fit into the buffer, to allow easier use of asynchronous buffers.

@@ -14,7 +14,6 @@
 #include <array>
 #include <cassert>
 #include <cstdlib>
-#include <iostream>
 #include <memory>
 
 namespace jbc
@@ -488,7 +487,7 @@ template<typename char_type, typename locator>
 template<typename traits, typename string_type, typename buffer>
 int output<char_type, locator>::char_to_tmp(string_type const& value, buffer& buf, locator& loc)
 {
-    REQUIRE(buf.size() >= 12, "Buffer must be big enough to hold the representation of a unicode char > U+10000")
+    REQUIRE(buf.size() >= 12, "Buffer must be big enough to hold the representation of a unicode char > U+10000");
     if constexpr(traits::is_utf8)
     {
         char_type c = value[loc.position - 1];
@@ -702,7 +701,6 @@ bool output<char_type, locator>::object(
         typename item::traits::object_const_iterator end,
         locator& loc, buffer& buf, int& offset)
 {
-    REQUIRE(obj.type() == json::ItemType::Object, "obj must be an object");
     REQUIRE(offset >= 0, "offset must be positive or null");
     if(loc.position == 0)
     {
@@ -897,8 +895,8 @@ bool output<char_type, locator>::array(
         return false;
 }
 
-template<typename char_type, typename item, typename locator = basic_locator>
-bool output_json(std::ostream& stream, item const& the_item)
+template<typename ostream, typename char_type, typename item, typename locator = basic_locator>
+bool output_json(ostream& stream, item const& the_item)
 {
     std::array<char_type, 32768> buf;
     locator loc;

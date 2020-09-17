@@ -8,6 +8,7 @@
 
 #include <string> // for std::strtoll
 #include <cerrno> // for errno
+#include <string_view>
 
 namespace jbc
 {

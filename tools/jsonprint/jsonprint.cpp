@@ -206,7 +206,7 @@ int main(int argc, char** argv)
     }
     if(argc < 2)
     {
-        std::cerr << "Usage : " << argv[0] << " <file>" << std::endl;
+        std::cerr << "Usage : " << argv[0] << "<file> [stream|doc|traversal|file]" << std::endl;
         return -1;
     }
     else
@@ -263,7 +263,7 @@ int main(int argc, char** argv)
     if(res)
     {
         //stl_printer::print(i, false, std::cout);
-        output_json<char, stl_item, basic_locator>(std::cout, i);
+        output_json<std::ostream, char, stl_item, basic_locator>(std::cout, i);
         return 0;
     }
     else
